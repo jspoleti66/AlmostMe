@@ -37,7 +37,7 @@ def consultar_openrouter(mensajes):
     }
 
     payload = {
-        "model": "meta-llama/llama-4-maverick:free",
+        "model": "meta-llama/llama-4-maverick",
         "messages": mensajes,
         "temperature": 0.7
     }
@@ -74,4 +74,7 @@ def chat():
     return jsonify({"response": respuesta})
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    # Render asigna un puerto en la variable de entorno PORT
+    port = int(os.environ.get("PORT", 5000))
+    # '0.0.0.0' es fundamental para que sea accesible externamente
+    app.run(host='0.0.0.0', port=port)
