@@ -4,9 +4,6 @@ import requests
 
 app = Flask(__name__)
 
-@app.route("/")
-def home():
-    return render_template("index.html")
 
 # Leer archivos del contexto
 def cargar_contexto():
