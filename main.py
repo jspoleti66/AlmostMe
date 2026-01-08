@@ -10,7 +10,7 @@ def cargar_contexto():
     archivos = {
         "configuracion": ["prompt_sistema.txt", "instrucciones_generales.txt"],
         "conocimientos": ["cv.txt", "documentos_tecnicos.txt", "respuestas_frecuentes.txt"],
-        "datos_personales": ["historia_personal.txt", "intereses.txt", "personalidad.txt"],
+        "datos_personales": ["historia_personal.txt", "intereses.txt", "personalidad.txt","contactos_clave.txt","hogar_distribucion.txt","hogar_mantenimiento.txt","hogar_otros.txt","hogar_seguridad.txt"],
         "fuentes_conversacionales": ["chats.txt", "emails.txt"],
         "proyectos": ["proyectos_actuales.txt", "tecnologias_utilizadas.txt"]
     }
