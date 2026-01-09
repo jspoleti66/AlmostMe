@@ -1,1 +1,0 @@
-OpenRouter, LLaMA, Replit, Python, API REST, generación de texto con LLMs.
