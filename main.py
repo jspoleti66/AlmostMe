@@ -79,9 +79,9 @@ def consultar_openrouter(mensajes):
     }
 
     payload = {
-        "model": "meta-llama/llama-4-scout",
-        "messages": mensajes,
-        "temperature": 0.4
+    "model": "meta-llama/llama-3.3-70b-instruct:free",
+    "messages": mensajes,
+    "temperature": 0.3
     }
 
     response = requests.post(
