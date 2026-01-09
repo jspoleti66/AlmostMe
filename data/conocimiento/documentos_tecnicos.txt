@@ -1,1 +1,0 @@
-He trabajado en la modernización de plataformas legacy utilizando microservicios y contenedores. Domino patrones de diseño, CI/CD y automatización.
