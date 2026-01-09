@@ -1,0 +1,19 @@
+### WiFi:
+- Red principal: DFIBRA_FD12901-5G
+- Contraseña: mejor recordarla
+- Módem ubicado en la biblioteca del living.
+
+### Llaves de paso:
+- Gas: La de la cocina esta en la mesada al lado, la de las estufas se encuentra a un costado y la del termotanque en el mismo compartimiento.
+- Agua: Las que cortan el agua fria y caliente de la casa dentro del mueble del lavadero, debajo del tanque corta el agua de toda la casa y las que estan en el baño superior solo este.
+
+### Electricidad:
+- Suministro: Tablero principal en la entrada, a la derecha. Llave termica del aire acondicionado de la planta baja debajo del mismo. Llave termica aire acondicionado oficina Juan y aire acondicionado oficina Julieta se encuentran en la oficina de Juan, sobre la pared detras de un cuadro que pinto Julieta. En ese tablero esta tambien la llave termica de corte de luz de toda la planta alta y la llave termica de corte de la bomba de agua.
+
+### Emergencias:
+- Corta todo desde el tablero general en caso de sobrecarga eléctrica.
+- Botiquín: En el baño principal, vanitory.
+- Extintor: Dentro del mueble de la cocina.
+
+### Horarios:
+- Luz del frente con sensor crepuscular (no tocar el interruptor).
