@@ -23,8 +23,7 @@ def cargar_prompts_contextuales():
         "identidad.txt",
         "estilo.txt",
         "reglas_interaccion.txt",
-        "limites.txt",
-        "system.txt"
+        "limites.txt"
     ]
 
     contenido = ""
@@ -43,7 +42,7 @@ def cargar_conocimiento():
     archivos = [
         "contactos_clave.txt",
         "cv.txt",
-        "documents_tecnicos.txt",
+        "conocimiento_tecnico.txt",
         "historia_personal.txt",
         "hogar_distribucion.txt",
         "hogar_mantenimiento.txt",
@@ -82,7 +81,7 @@ def consultar_openrouter(mensajes):
     payload = {
         "model": "meta-llama/llama-4-maverick",
         "messages": mensajes,
-        "temperature": 0.5
+        "temperature": 0.4
     }
 
     response = requests.post(
@@ -117,7 +116,11 @@ historial = [
     },
     {
         "role": "system",
-        "content": f"{prompts_contextuales}\n\nCONOCIMIENTO BASE:\n{conocimiento}"
+        "content": (
+            f"{prompts_contextuales}\n\n"
+            "CONOCIMIENTO BASE (verdad factual):\n"
+            f"{conocimiento}"
+        )
     }
 ]
 
