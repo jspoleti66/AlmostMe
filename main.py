@@ -23,7 +23,8 @@ def cargar_prompts_contextuales():
         "identidad.txt",
         "estilo.txt",
         "reglas_interaccion.txt",
-        "limites.txt"
+        "limites.txt",
+        "system.txt"
     ]
 
     contenido = ""
@@ -40,11 +41,17 @@ def cargar_prompts_contextuales():
 def cargar_conocimiento():
     base_path = "data/conocimiento"
     archivos = [
+        "contactos_clave.txt",
         "cv.txt",
+        "documents_tecnicos.txt",
+        "historia_personal.txt",
+        "hogar_distribucion.txt",
+        "hogar_mantenimiento.txt",
+        "hogar_otros.txt",
+        "hogar_seguridad.txt",
         "intereses.txt",
         "personalidad.txt",
-        "documentos_tecnicos.txt",
-        "proyectos_actuales.txt"
+        "respuestas_frecuentes.txt"
     ]
 
     conocimiento = ""
