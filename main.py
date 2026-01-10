@@ -1,81 +1,36 @@
-from flask import Flask, request, render_template, jsonify, session
+from flask import Flask, request, render_template, jsonify
 import os
 import requests
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("FLASK_SECRET_KEY", "almostme-secret")
 
 # =====================================================
-# CARGA DE PROMPTS
+# CARGA DE PROMPT Y CONOCIMIENTO
 # =====================================================
-
-def leer_archivo(path):
-    if os.path.exists(path):
-        with open(path, "r", encoding="utf-8") as f:
-            return f.read().strip()
-    print(f"⚠️ Archivo no encontrado: {path}")
-    return ""
 
 def cargar_system_prompt():
-    return leer_archivo("data/prompts/system.txt")
+    ruta = "data/prompts/system.txt"
+    if not os.path.exists(ruta):
+        raise FileNotFoundError("❌ No se encontró data/prompts/system.txt")
 
-def cargar_prompts_contextuales():
-    base = "data/prompts"
-    orden = [
-        "identidad.txt",
-        "estilo.txt",
-        "reglas_interaccion.txt",
-        "limites.txt"
-    ]
-    return "\n\n".join(leer_archivo(os.path.join(base, a)) for a in orden)
+    with open(ruta, "r", encoding="utf-8") as f:
+        return f.read().strip()
+
 
 def cargar_conocimiento():
-    base = "data/conocimiento"
-    archivos = [
-        "contactos_clave.txt",
-        "cv.txt",
-        "conocimiento_tecnico.txt",
-        "historia_personal.txt",
-        "hogar_distribucion.txt",
-        "hogar_mantenimiento.txt",
-        "hogar_otros.txt",
-        "hogar_seguridad.txt",
-        "intereses.txt",
-        "personalidad.txt",
-        "respuestas_frecuentes.txt"
-    ]
+    base_path = "data/conocimiento"
+    if not os.path.exists(base_path):
+        raise FileNotFoundError("❌ No se encontró data/conocimiento")
 
-    bloques = []
-    for a in archivos:
-        contenido = leer_archivo(os.path.join(base, a))
-        if contenido:
-            bloques.append(f"### {a}\n{contenido}")
+    conocimiento = ""
 
-    return "\n\n".join(bloques)
+    for archivo in sorted(os.listdir(base_path)):
+        ruta = os.path.join(base_path, archivo)
+        if os.path.isfile(ruta):
+            with open(ruta, "r", encoding="utf-8") as f:
+                conocimiento += f"\n### {archivo}\n{f.read().strip()}\n"
 
-# =====================================================
-# CONTEXTO BASE
-# =====================================================
-
-SYSTEM_PROMPT = cargar_system_prompt()
-PROMPTS_CONTEXTUALES = cargar_prompts_contextuales()
-CONOCIMIENTO = cargar_conocimiento()
-
-def crear_historial_base():
-    return [
-        {
-            "role": "system",
-            "content": SYSTEM_PROMPT
-        },
-        {
-            "role": "system",
-            "content": (
-                f"{PROMPTS_CONTEXTUALES}\n\n"
-                "CONOCIMIENTO BASE (verdad factual):\n"
-                f"{CONOCIMIENTO}"
-            )
-        }
-    ]
+    return conocimiento.strip()
 
 # =====================================================
 # OPENROUTER
@@ -85,7 +40,7 @@ def consultar_openrouter(mensajes):
     api_key = os.getenv("OPENROUTER_API_KEY")
 
     if not api_key:
-        return "⚠️ OPENROUTER_API_KEY no configurada en Render."
+        return "⚠️ Falta configurar OPENROUTER_API_KEY"
 
     headers = {
         "Authorization": f"Bearer {api_key}",
@@ -97,7 +52,7 @@ def consultar_openrouter(mensajes):
     payload = {
         "model": "meta-llama/llama-3.3-70b-instruct:free",
         "messages": mensajes,
-        "temperature": 0.3
+        "temperature": 0.25
     }
 
     try:
@@ -105,12 +60,12 @@ def consultar_openrouter(mensajes):
             "https://openrouter.ai/api/v1/chat/completions",
             headers=headers,
             json=payload,
-            timeout=30
+            timeout=60
         )
 
         data = response.json()
 
-        if "choices" in data:
+        if "choices" in data and len(data["choices"]) > 0:
             return data["choices"][0]["message"]["content"]
 
         if "error" in data:
@@ -119,15 +74,30 @@ def consultar_openrouter(mensajes):
         return "⚠️ Respuesta inválida del modelo."
 
     except Exception as e:
-        return f"⚠️ Error consultando OpenRouter: {e}"
+        return f"⚠️ Error al conectar con OpenRouter: {e}"
 
 # =====================================================
-# RUTAS
+# INICIALIZACIÓN DE CONVERSACIÓN
+# =====================================================
+
+system_prompt = cargar_system_prompt()
+conocimiento = cargar_conocimiento()
+
+historial = [
+    {
+        "role": "system",
+        "content": f"{system_prompt}\n\nCONOCIMIENTO BASE:\n{conocimiento}"
+    }
+]
+
+# =====================================================
+# RUTAS FLASK
 # =====================================================
 
 @app.route("/")
 def index():
     return render_template("index.html")
+
 
 @app.route("/chat", methods=["POST"])
 def chat():
@@ -135,12 +105,6 @@ def chat():
 
     if not user_input:
         return jsonify({"response": "Decime algo y seguimos."})
-
-    # Inicializar historial por sesión
-    if "historial" not in session:
-        session["historial"] = crear_historial_base()
-
-    historial = session["historial"]
 
     historial.append({
         "role": "user",
@@ -154,14 +118,7 @@ def chat():
         "content": respuesta
     })
 
-    session["historial"] = historial
-
     return jsonify({"response": respuesta})
-
-@app.route("/reset", methods=["POST"])
-def reset():
-    session.pop("historial", None)
-    return jsonify({"ok": True})
 
 # =====================================================
 # RUN
