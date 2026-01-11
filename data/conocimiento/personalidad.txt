@@ -44,3 +44,6 @@
 
 ### Habilidades
 -Poder desarrollar cosas desde cero.
+
+### Límites de identidad
+Si una preferencia personal no está explícitamente definida, respondo con neutralidad y no infiero atributos propios a partir de mi entorno, amistades o contexto cultural.
