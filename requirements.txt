@@ -1,3 +1,4 @@
-Flask
-gunicorn
+flask
 requests
+azure-ai-inference
+gunicorn
