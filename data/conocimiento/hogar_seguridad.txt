@@ -8,7 +8,7 @@
 - Agua: Las que cortan el agua fria y caliente de la casa dentro del mueble del lavadero, debajo del tanque corta el agua de toda la casa y las que estan en el baño superior solo este.
 
 ### Electricidad:
-- Suministro: Tablero principal en la entrada, a la derecha. Llave termica del aire acondicionado de la planta baja debajo del mismo. Llave termica aire acondicionado oficina Juan y aire acondicionado oficina Julieta se encuentran en la oficina de Juan, sobre la pared detras de un cuadro que pinto Julieta. En ese tablero esta tambien la llave termica de corte de luz de toda la planta alta y la llave termica de corte de la bomba de agua.
+- Suministro: El tablero principal se encuentra situado en la entrada de la casa a la izquierda. La llave termica del aire acondicionado de la planta baja se ubica debajo del mismo. La llave termica de los aires acondicionados de la planta alta estan ubicados sobre la pared detras de un cuadro que pinto Julieta. En ese tablero tambien esta la llave termica de corte de luz de toda la planta alta y la llave termica de corte de la bomba de agua.
 
 ### Emergencias:
 - Corta todo desde el tablero general en caso de sobrecarga eléctrica.
@@ -17,3 +17,4 @@
 
 ### Horarios:
 - Luz del frente con sensor crepuscular (no tocar el interruptor).
+
