@@ -6,26 +6,25 @@ from azure.core.credentials import AzureKeyCredential
 from datetime import timedelta
 
 app = Flask(__name__)
-# Clave necesaria para encriptar las sesiones de los usuarios
-app.secret_key = "mi_clave_secreta_github_2026"
+
+# CONFIGURACIÓN DE SESIÓN (Fundamental para Render)
+app.secret_key = os.getenv("SECRET_KEY", "clave_secreta_llama_2026")
 app.permanent_session_lifetime = timedelta(minutes=30)
 
 # =====================================================
-# CARGA DE PROMPT Y CONOCIMIENTO (Contexto Fijo)
+# 1. CARGA DE PROMPT Y CONOCIMIENTO (Contexto Fijo)
 # =====================================================
 
 def cargar_contexto_fijo():
     ruta_prompt = "data/prompts/system.txt"
     base_path_conocimiento = "data/conocimiento"
     
-    # Cargar System Prompt
     if not os.path.exists(ruta_prompt):
-        raise FileNotFoundError("❌ No se encontró data/prompts/system.txt")
-        
+        return "Eres un asistente útil." # Fallback si no hay archivo
+
     with open(ruta_prompt, "r", encoding="utf-8") as f:
         system_txt = f.read().strip()
     
-    # Cargar Conocimiento
     conocimiento = ""
     if os.path.exists(base_path_conocimiento):
         for archivo in sorted(os.listdir(base_path_conocimiento)):
@@ -36,17 +35,17 @@ def cargar_contexto_fijo():
     
     return f"{system_txt}\n\nCONOCIMIENTO BASE:\n{conocimiento}"
 
-# Cargamos el contexto una sola vez al iniciar el servidor
+# Se carga una sola vez al arrancar para ahorrar recursos
 CONTEXTO_ESTATICO = cargar_contexto_fijo()
 
 # =====================================================
-# CONEXIÓN CON GITHUB MODELS
+# 2. LÓGICA DE GITHUB MODELS (Llama 3.3 70B)
 # =====================================================
 
 def consultar_github(mensajes_historial):
     token = os.getenv("GITHUB_TOKEN")
     if not token:
-        return "⚠️ Error: Falta configurar la variable de entorno GITHUB_TOKEN"
+        return "⚠️ Error: Configura GITHUB_TOKEN en las variables de entorno de Render."
 
     endpoint = "https://models.inference.ai.azure.com"
     
@@ -56,35 +55,37 @@ def consultar_github(mensajes_historial):
             credential=AzureKeyCredential(token),
         )
 
-        # 1. Inyectamos el contexto fijo (System)
+        # Inyectamos contexto fijo + ventana deslizante de los últimos 6 mensajes
         mensajes_github = [SystemMessage(content=CONTEXTO_ESTATICO)]
         
-        # 2. Agregamos solo los últimos 6 mensajes para no saturar los 8k tokens de GitHub
         for msg in mensajes_historial[-6:]:
             if msg["role"] == "user":
                 mensajes_github.append(UserMessage(content=msg["content"]))
-            else:
+            elif msg["role"] == "assistant":
                 mensajes_github.append(AssistantMessage(content=msg["content"]))
 
         response = client.complete(
             messages=mensajes_github,
-            model="meta-llama-3-3-70b-instruct",
+            model="Llama-3.3-70B-Instruct", # ID exacto para GitHub Marketplace
             temperature=0.25,
-            max_tokens=1500 # Limite de respuesta para ahorrar cuota
+            max_tokens=2048
         )
+        
+        # Log de consumo para monitorear en Render
+        print(f"Tokens usados: {response.usage.total_tokens}")
         
         return response.choices[0].message.content
 
     except Exception as e:
-        return f"⚠️ Error en GitHub Models: {str(e)}"
+        print(f"Error detallado en la API: {e}")
+        return f"⚠️ Error de conexión: {str(e)}"
 
 # =====================================================
-# RUTAS FLASK
+# 3. RUTAS DE LA APLICACIÓN
 # =====================================================
 
 @app.route("/")
 def index():
-    # Reiniciar historial al cargar la página principal
     session['historial'] = []
     return render_template("index.html")
 
@@ -93,30 +94,29 @@ def chat():
     user_input = request.json.get("message", "").strip()
     
     if not user_input:
-        return jsonify({"response": "Decime algo y seguimos."})
+        return jsonify({"response": "Escribe algo para comenzar."})
 
-    # Si no existe historial en la sesión del navegador, lo creamos
     if 'historial' not in session:
         session['historial'] = []
 
-    # Guardamos el mensaje del usuario
+    # Guardar mensaje del usuario
     session['historial'].append({"role": "user", "content": user_input})
     
-    # Consultamos a GitHub Models pasándole el historial de esta sesión
+    # Obtener respuesta del modelo
     respuesta = consultar_github(session['historial'])
     
-    # Guardamos la respuesta del asistente
+    # Guardar respuesta de la IA
     session['historial'].append({"role": "assistant", "content": respuesta})
     
-    # Marcamos la sesión como modificada para que Flask guarde los cambios en la cookie
+    # Forzar guardado de sesión
     session.modified = True
     
     return jsonify({"response": respuesta})
 
 # =====================================================
-# EJECUCIÓN
+# 4. EJECUCIÓN
 # =====================================================
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    # Configuración para desarrollo local
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
