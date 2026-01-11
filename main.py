@@ -1,129 +1,99 @@
-from flask import Flask, request, render_template, jsonify
+from flask import Flask, request, render_template, jsonify, session
 import os
 import requests
+from datetime import timedelta
 
 app = Flask(__name__)
+# Necesitás una clave secreta para usar sesiones (puede ser cualquier texto)
+app.secret_key = "clave_secreta_para_clon_llama_2026"
+# La sesión expira tras 30 minutos de inactividad
+app.permanent_session_lifetime = timedelta(minutes=30)
 
 # =====================================================
-# CARGA DE PROMPT Y CONOCIMIENTO
+# CARGA DE DATOS (Se hace una sola vez al iniciar)
 # =====================================================
-
-def cargar_system_prompt():
-    ruta = "data/prompts/system.txt"
-    if not os.path.exists(ruta):
-        raise FileNotFoundError("❌ No se encontró data/prompts/system.txt")
-
-    with open(ruta, "r", encoding="utf-8") as f:
-        return f.read().strip()
-
-
-def cargar_conocimiento():
-    base_path = "data/conocimiento"
-    if not os.path.exists(base_path):
-        raise FileNotFoundError("❌ No se encontró data/conocimiento")
-
+def cargar_contexto_fijo():
+    ruta_prompt = "data/prompts/system.txt"
+    base_path_conocimiento = "data/conocimiento"
+    
+    # Cargar System Prompt
+    with open(ruta_prompt, "r", encoding="utf-8") as f:
+        system_txt = f.read().strip()
+    
+    # Cargar Conocimiento
     conocimiento = ""
-
-    for archivo in sorted(os.listdir(base_path)):
-        ruta = os.path.join(base_path, archivo)
-        if os.path.isfile(ruta):
-            with open(ruta, "r", encoding="utf-8") as f:
+    if os.path.exists(base_path_conocimiento):
+        for archivo in sorted(os.listdir(base_path_conocimiento)):
+            with open(os.path.join(base_path_conocimiento, archivo), "r", encoding="utf-8") as f:
                 conocimiento += f"\n### {archivo}\n{f.read().strip()}\n"
+    
+    return f"{system_txt}\n\nCONOCIMIENTO BASE:\n{conocimiento}"
 
-    return conocimiento.strip()
+# Cargamos el contexto en una constante global
+CONTEXTO_CONFIGURADO = cargar_contexto_fijo()
 
 # =====================================================
-# OPENROUTER
+# LÓGICA DE OPENROUTER
 # =====================================================
-
-def consultar_openrouter(mensajes):
+def consultar_openrouter(mensajes_historial):
     api_key = os.getenv("OPENROUTER_API_KEY")
-
-    if not api_key:
-        return "⚠️ Falta configurar OPENROUTER_API_KEY"
-
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json",
-        "HTTP-Referer": "https://almostme-demo",
-        "X-Title": "almostme-clon"
-    }
+    
+    # 1. Armamos el payload incluyendo el contexto fijo SIEMPRE al principio
+    mensajes_para_api = [
+        {"role": "system", "content": CONTEXTO_CONFIGURADO}
+    ]
+    
+    # 2. Limitamos el historial a los últimos 6 mensajes (ventana deslizante)
+    # Esto evita superar los límites de tokens del modelo gratuito
+    mensajes_para_api.extend(mensajes_historial[-6:])
 
     payload = {
         "model": "meta-llama/llama-3.3-70b-instruct:free",
-        "messages": mensajes,
+        "messages": mensajes_para_api,
         "temperature": 0.25
     }
 
     try:
         response = requests.post(
-            "https://openrouter.ai/api/v1/chat/completions",
-            headers=headers,
+            "openrouter.ai",
+            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
             json=payload,
             timeout=60
         )
-
         data = response.json()
-
-        if "choices" in data and len(data["choices"]) > 0:
-            return data["choices"][0]["message"]["content"]
-
-        if "error" in data:
-            return f"⚠️ Error del modelo: {data['error'].get('message', 'Desconocido')}"
-
-        return "⚠️ Respuesta inválida del modelo."
-
+        return data['choices'][0]['message']['content']
     except Exception as e:
-        return f"⚠️ Error al conectar con OpenRouter: {e}"
+        return f"⚠️ Error: {str(e)}"
 
 # =====================================================
-# INICIALIZACIÓN DE CONVERSACIÓN
+# RUTAS
 # =====================================================
-
-system_prompt = cargar_system_prompt()
-conocimiento = cargar_conocimiento()
-
-historial = [
-    {
-        "role": "system",
-        "content": f"{system_prompt}\n\nCONOCIMIENTO BASE:\n{conocimiento}"
-    }
-]
-
-# =====================================================
-# RUTAS FLASK
-# =====================================================
-
 @app.route("/")
 def index():
+    # Limpiamos historial al entrar de nuevo si querés empezar de cero
+    session['historial'] = []
     return render_template("index.html")
-
 
 @app.route("/chat", methods=["POST"])
 def chat():
     user_input = request.json.get("message", "").strip()
+    
+    if 'historial' not in session:
+        session['historial'] = []
 
-    if not user_input:
-        return jsonify({"response": "Decime algo y seguimos."})
-
-    historial.append({
-        "role": "user",
-        "content": user_input
-    })
-
-    respuesta = consultar_openrouter(historial)
-
-    historial.append({
-        "role": "assistant",
-        "content": respuesta
-    })
-
+    # Añadimos mensaje del usuario al historial de SU sesión
+    session['historial'].append({"role": "user", "content": user_input})
+    
+    # Consultamos con la ventana deslizante
+    respuesta = consultar_openrouter(session['historial'])
+    
+    # Añadimos respuesta de la IA al historial de SU sesión
+    session['historial'].append({"role": "assistant", "content": respuesta})
+    
+    # Guardamos los cambios en la sesión explícitamente
+    session.modified = True
+    
     return jsonify({"response": respuesta})
 
-# =====================================================
-# RUN
-# =====================================================
-
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
