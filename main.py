@@ -77,7 +77,7 @@ def consultar_github(historial):
 
         # PETICIÓN
         response = client.complete(
-            model="Llama-3.1-8B-Instruct",
+            model="Llama-3.3-70B-Instruct",
             messages=mensajes,
             temperature=0.25,
             max_tokens=1024,
@@ -143,4 +143,5 @@ def chat():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
+
 
