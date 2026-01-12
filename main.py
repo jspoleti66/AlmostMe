@@ -86,13 +86,13 @@ def consultar_github(historial):
                 mensajes.append(AssistantMessage(content=msg["content"]))
 
         response = client.complete(
-            model="Llama-3.1-70B-Instruct",
+            model="Meta-Llama-3.1-8B-Instruct",
             messages=mensajes,
-            temperature=0.3,   # más disciplinado
-            max_tokens=384,    # menos divague
+            temperature=0.20,   # menos creativo
+            max_tokens=384,      # menos divague
             top_p=0.1
         )
-
+        
         if response and response.choices:
             return response.choices[0].message.content.strip()
 
@@ -156,3 +156,4 @@ def chat():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
+
