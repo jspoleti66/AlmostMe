@@ -82,7 +82,7 @@ def consultar_github(historial):
                 mensajes.append(AssistantMessage(content=msg["content"]))
 
         response = client.complete(
-            model="Llama 4 Scout 17B 16E Instruct",
+            model="Llama-4-Scout-17B-16E-Instruct",
             messages=mensajes,
             temperature=0.25,
             max_tokens=512,
@@ -154,6 +154,7 @@ def chat():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
