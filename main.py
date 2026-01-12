@@ -84,9 +84,9 @@ def consultar_github(historial):
         response = client.complete(
             model="Meta-Llama-3.1-8B-Instruct",
             messages=mensajes,
-            temperature=0.25,
+            temperature=0.50,
             max_tokens=512,
-            top_p=0.1
+            top_p=0.5
         )
         
         if response and response.choices:
@@ -154,6 +154,7 @@ def chat():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
