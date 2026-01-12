@@ -12,7 +12,7 @@ from datetime import timedelta
 app = Flask(__name__)
 
 # =====================================================
-# CONFIGURACIÓN DE SESIÓN (Render)
+# CONFIGURACIÓN DE SESIÓN
 # =====================================================
 
 app.secret_key = os.getenv("SECRET_KEY", "almostme_secret_2026")
@@ -37,26 +37,30 @@ def cargar_system_prompt():
 
 def cargar_conocimiento():
     base_path = "data/conocimiento"
-    texto = ""
+    bloques = []
     if os.path.exists(base_path):
         for archivo in sorted(os.listdir(base_path)):
             ruta = os.path.join(base_path, archivo)
             if os.path.isfile(ruta):
                 with open(ruta, "r", encoding="utf-8") as f:
-                    texto += f"\n### {archivo}\n{f.read().strip()}\n"
-    return texto.strip()
+                    bloques.append(f"[{archivo}]\n{f.read().strip()}")
+    return "\n\n".join(bloques)
 
 SYSTEM_PROMPT = cargar_system_prompt()
 CONOCIMIENTO = cargar_conocimiento()
 
-CONTEXTO_UNIFICADO = f"""{SYSTEM_PROMPT}
+CONTEXTO_UNIFICADO = f"""
+{SYSTEM_PROMPT}
 
-CONOCIMIENTO BASE:
+────────────────────────────────────────
+CONOCIMIENTO BASE DEFINIDO
+────────────────────────────────────────
+
 {CONOCIMIENTO}
-"""
+""".strip()
 
 # =====================================================
-# GITHUB MODELS – LLAMA 3.3 70B
+# GITHUB MODELS – LLAMA 3.1 70B
 # =====================================================
 
 def consultar_github(historial):
@@ -74,7 +78,7 @@ def consultar_github(historial):
 
         mensajes = [SystemMessage(content=CONTEXTO_UNIFICADO)]
 
-        # Ventana deslizante (últimos 6 intercambios)
+        # Ventana deslizante estricta
         for msg in historial[-6:]:
             if msg["role"] == "user":
                 mensajes.append(UserMessage(content=msg["content"]))
@@ -82,13 +86,13 @@ def consultar_github(historial):
                 mensajes.append(AssistantMessage(content=msg["content"]))
 
         response = client.complete(
-            model="Llama-3.3-70B-Instruct",
+            model="Llama-3.1-70B-Instruct",
             messages=mensajes,
-            temperature=0.50,
-            max_tokens=512,
+            temperature=0.3,   # más disciplinado
+            max_tokens=384,    # menos divague
             top_p=0.1
         )
-        
+
         if response and response.choices:
             return response.choices[0].message.content.strip()
 
@@ -96,7 +100,7 @@ def consultar_github(historial):
 
     except Exception as e:
         print(f"❌ ERROR GITHUB MODELS: {type(e).__name__} - {e}")
-        return "⚠️ Error en la comunicación con la IA."
+        return "⚠️ Error en la comunicación."
 
 # =====================================================
 # RUTAS
@@ -122,8 +126,7 @@ def chat():
         if not user_input:
             return jsonify({"response": "Decime algo para comenzar."})
 
-        if "historial" not in session:
-            session["historial"] = []
+        session.setdefault("historial", [])
 
         session["historial"].append({
             "role": "user",
@@ -137,7 +140,6 @@ def chat():
             "content": respuesta
         })
 
-        # Limitar historial total (seguridad memoria)
         session["historial"] = session["historial"][-12:]
         session.modified = True
 
@@ -154,11 +156,3 @@ def chat():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
-
-
-
-
-
-
-
-
