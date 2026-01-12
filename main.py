@@ -77,10 +77,10 @@ def consultar_github(historial):
 
         # PETICIÓN
         response = client.complete(
-            model: "meta/Llama-3.3-70B-Instruct",
-            temperature: 0.25,
-            max_tokens: 2048,
-            top_p: 0.1
+            model="meta/Llama-3.3-70B-Instruct",
+            temperature=0.25,
+            max_tokens=2048,
+            top_p=0.1
         )
 
         # ACCESO CORRECTO AL SDK 2026:
@@ -143,6 +143,7 @@ def chat():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
