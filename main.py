@@ -66,7 +66,7 @@ def consultar_github(mensajes_historial):
 
         response = client.complete(
             messages=mensajes_github,
-            model="meta-llama-3-3-70b-instruct", # ID exacto para GitHub Marketplace
+            model="meta-llama/llama-3.3-70b-instruct:free", # ID exacto para GitHub Marketplace
             temperature=0.25,
             max_tokens=2048
         )
@@ -120,5 +120,6 @@ def chat():
 if __name__ == "__main__":
     # Configuración para desarrollo local
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+
 
 
