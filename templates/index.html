@@ -3,81 +3,52 @@
 <head>
   <meta charset="UTF-8">
   <title>AlmostMe – Clon Interactivo</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <style>
-    :root {
-      --bg: #020617;
-      --panel: #0f172a;
-      --panel-2: #020617;
-      --bot: #1e293b;
-      --user: #2563eb;
-      --accent: #38bdf8;
-      --text: #e5e7eb;
-      --muted: #94a3b8;
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
     body {
       margin: 0;
-      background: var(--bg);
-      font-family: system-ui, -apple-system, BlinkMacSystemFont;
-      color: var(--text);
-      height: 100dvh;
+      height: 100vh;
+      background: #020617;
       display: flex;
       justify-content: center;
       align-items: center;
+      font-family: system-ui;
     }
 
-    /* ======================
-       CONTAINER RESPONSIVE
-       ====================== */
     .container {
-      width: 100%;
-      height: 100%;
-      max-width: 480px;
-      max-height: 100dvh;
-      background: var(--panel);
+      width: 380px;
+      height: 600px;
+      background: #0f172a;
+      border-radius: 18px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.4);
       display: flex;
       flex-direction: column;
       position: relative;
-    }
-
-    @media (min-width: 768px) {
-      .container {
-        height: 680px;
-        border-radius: 20px;
-        box-shadow: 0 25px 50px rgba(0,0,0,0.5);
-      }
+      overflow: hidden;
     }
 
     /* ======================
-       HEADER / VIDEO
+       VIDEO BURBUJA
        ====================== */
-    .header {
-      position: relative;
-      padding: 16px;
-      display: flex;
-      justify-content: center;
-    }
-
     .video-bubble {
-      width: 120px;
-      height: 120px;
+      position: absolute;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 110px;
+      height: 110px;
       border-radius: 50%;
       overflow: hidden;
-      border: 3px solid var(--user);
+      border: 3px solid #2563eb;
       background: black;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
-      transition: border-color 0.3s, box-shadow 0.3s;
+      z-index: 10;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.6);
+      transition: box-shadow 0.3s, border-color 0.3s;
     }
 
     .video-bubble.thinking {
-      border-color: var(--accent);
-      box-shadow: 0 0 30px rgba(56,189,248,0.8);
+      border-color: #38bdf8;
+      box-shadow: 0 0 25px rgba(56,189,248,0.8);
     }
 
     .video-bubble video {
@@ -91,52 +62,51 @@
        ====================== */
     #chat {
       flex: 1;
-      padding: 12px 16px;
+      padding: 140px 12px 12px;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 8px;
     }
 
     .user, .bot {
       max-width: 85%;
-      padding: 12px 14px;
-      border-radius: 14px;
-      font-size: 15px;
-      line-height: 1.45;
-      word-wrap: break-word;
+      padding: 10px 12px;
+      border-radius: 12px;
+      font-size: 14px;
+      line-height: 1.4;
     }
 
     .user {
       align-self: flex-end;
-      background: var(--user);
+      background: #2563eb;
       color: white;
       border-bottom-right-radius: 4px;
     }
 
     .bot {
       align-self: flex-start;
-      background: var(--bot);
-      color: var(--text);
+      background: #1e293b;
+      color: #e5e7eb;
       border-bottom-left-radius: 4px;
     }
 
     /* ======================
-       TYPING
+       TYPING INDICATOR
        ====================== */
     .typing {
       display: flex;
-      gap: 6px;
-      padding: 10px 14px;
-      background: var(--bot);
-      border-radius: 14px;
+      gap: 4px;
+      padding: 8px 12px;
+      background: #1e293b;
+      border-radius: 12px;
       width: fit-content;
     }
 
     .typing span {
-      width: 7px;
-      height: 7px;
-      background: var(--muted);
+      width: 6px;
+      height: 6px;
+      background: #94a3b8;
       border-radius: 50%;
       animation: blink 1.4s infinite both;
     }
@@ -155,39 +125,82 @@
        ====================== */
     #input-container {
       display: flex;
-      gap: 10px;
-      padding: 12px;
-      background: var(--panel-2);
-      border-top: 1px solid var(--bot);
+      gap: 8px;
+      padding: 10px;
+      background: #020617;
+      border-top: 1px solid #1e293b;
     }
 
     input {
       flex: 1;
-      padding: 14px;
-      border-radius: 14px;
+      padding: 10px 12px;
+      border-radius: 10px;
       border: 1px solid #334155;
-      background: var(--panel-2);
+      background: #020617;
       color: white;
-      font-size: 15px;
       outline: none;
     }
 
     input::placeholder {
-      color: var(--muted);
+      color: #94a3b8;
     }
 
     button {
-      padding: 0 18px;
-      border-radius: 14px;
+      padding: 10px 14px;
+      border-radius: 10px;
       border: none;
-      background: var(--user);
+      background: #2563eb;
       color: white;
-      font-size: 15px;
       cursor: pointer;
     }
 
     button:hover {
       background: #1d4ed8;
+    }
+
+    /* ======================
+       MOBILE RESPONSIVE
+       ====================== */
+    @media (max-width: 768px) {
+
+      body {
+        align-items: stretch;
+      }
+
+      .container {
+        width: 100%;
+        height: 100vh;
+        border-radius: 0;
+      }
+
+      .video-bubble {
+        width: 88px;
+        height: 88px;
+        top: 10px;
+      }
+
+      #chat {
+        padding: 120px 14px 14px;
+      }
+
+      .user, .bot {
+        font-size: 15px;
+        max-width: 90%;
+      }
+
+      #input-container {
+        padding: 12px;
+      }
+
+      input {
+        font-size: 16px;
+        padding: 12px;
+      }
+
+      button {
+        padding: 12px 16px;
+        font-size: 15px;
+      }
     }
   </style>
 </head>
@@ -196,23 +209,24 @@
 
   <div class="container">
 
-    <div class="header">
-      <div class="video-bubble" id="videoBubble">
-        <video autoplay muted loop playsinline>
-          <source src="/static/clone.mp4" type="video/mp4">
-        </video>
-      </div>
+    <!-- VIDEO DEL CLON -->
+    <div class="video-bubble" id="videoBubble">
+      <video autoplay muted loop playsinline>
+        <source src="/static/clone.mp4" type="video/mp4">
+      </video>
     </div>
 
+    <!-- CHAT -->
     <div id="chat">
       <div class="bot">Hola, soy AlmostMe. ¿En qué puedo ayudarte?</div>
     </div>
 
+    <!-- INPUT -->
     <div id="input-container">
       <input
         type="text"
         id="user-input"
-        placeholder="Escribí tu mensaje…"
+        placeholder="Escribí tu mensaje..."
         onkeydown="if(event.key==='Enter') enviar()"
       />
       <button onclick="enviar()">Enviar</button>
@@ -255,19 +269,26 @@
     }
 
     function mostrarTyping() {
+      const chat = document.getElementById("chat");
       const bubble = document.getElementById("videoBubble");
+
       bubble.classList.add("thinking");
 
       typingEl = document.createElement("div");
       typingEl.className = "typing bot";
       typingEl.innerHTML = "<span></span><span></span><span></span>";
-      document.getElementById("chat").appendChild(typingEl);
+      chat.appendChild(typingEl);
+      chat.scrollTop = chat.scrollHeight;
     }
 
     function ocultarTyping() {
-      document.getElementById("videoBubble").classList.remove("thinking");
-      if (typingEl) typingEl.remove();
-      typingEl = null;
+      const bubble = document.getElementById("videoBubble");
+      bubble.classList.remove("thinking");
+
+      if (typingEl) {
+        typingEl.remove();
+        typingEl = null;
+      }
     }
   </script>
 
