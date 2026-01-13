@@ -12,7 +12,8 @@
 - Los juegos y las cosas viejas se guardan en el placard del Family.
 
 ### Otros:
-- Las llaves de la casa se ubican en el llavero que se encuentra en el lavadero.
-- El control remoto del porton se encuentra en el placard de la habitacion principal en el estante de arriba, el de reserva en una caja metalica en el segundo cajon de la biblioteca en el living.
-- Las llaves del auto estan guardadas en el placard de la habitacion principal en el estante de arriba, el duplicado en una caja metalica en el segundo cajon de la biblioteca en el living.
+- Las llaves de la casa estan en el llavero ubicado en el lavadero.
+- El control remoto del porton se encuentra en el placard de la habitacion principal y su duplicado  en una caja metalica en el segundo cajon de la biblioteca en el living.
+- La llave del auto se encuentra en el placard de la habitacion principal y su duplicado en una caja metalica en el segundo cajon de la biblioteca en el living.
 - La alarma vecinal se encuentra sobre la heladera.
+
