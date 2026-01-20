@@ -1,0 +1,5 @@
+MANUALES INTERNOS DISPONIBLES
+
+- Piscina: /manuales/piscina
+- Jardín: /manuales/jardin
+- Electricidad básica del hogar: /manuales/electricidad
