@@ -183,8 +183,20 @@ def chat():
         # =================================================
         # 2) MANUAL ESPECÍFICO (NO PASA POR EL MODELO)
         # =================================================
+        
         manual = buscar_manual(user_input)
         if manual:
+            ruta_fisica = os.path.join(
+                app.root_path,
+                "data",
+                manual["archivo"].lstrip("/")
+            )
+        
+            if not os.path.exists(ruta_fisica):
+                return jsonify({
+                    "response": "No tengo un manual interno disponible sobre ese tema."
+                })
+        
             return jsonify({
                 "response": (
                     f"Podés consultar el manual de {manual['titulo']} acá:\n"
@@ -239,3 +251,4 @@ def manuales(filename):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
+
