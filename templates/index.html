@@ -75,6 +75,7 @@
       border-radius: 12px;
       font-size: 14px;
       line-height: 1.4;
+      word-wrap: break-word;
     }
 
     .user {
@@ -89,6 +90,11 @@
       background: #1e293b;
       color: #e5e7eb;
       border-bottom-left-radius: 4px;
+    }
+
+    .bot a {
+      color: #38bdf8;
+      text-decoration: underline;
     }
 
     /* ======================
@@ -159,48 +165,13 @@
     }
 
     /* ======================
-       MOBILE RESPONSIVE
+       MOBILE
        ====================== */
     @media (max-width: 768px) {
-
-      body {
-        align-items: stretch;
-      }
-
-      .container {
-        width: 100%;
-        height: 100vh;
-        border-radius: 0;
-      }
-
-      .video-bubble {
-        width: 88px;
-        height: 88px;
-        top: 10px;
-      }
-
-      #chat {
-        padding: 120px 14px 14px;
-      }
-
-      .user, .bot {
-        font-size: 15px;
-        max-width: 90%;
-      }
-
-      #input-container {
-        padding: 12px;
-      }
-
-      input {
-        font-size: 16px;
-        padding: 12px;
-      }
-
-      button {
-        padding: 12px 16px;
-        font-size: 15px;
-      }
+      body { align-items: stretch; }
+      .container { width: 100%; height: 100vh; border-radius: 0; }
+      .video-bubble { width: 88px; height: 88px; top: 10px; }
+      #chat { padding: 120px 14px 14px; }
     }
   </style>
 </head>
@@ -237,6 +208,14 @@
   <script>
     let typingEl = null;
 
+    function renderRespuesta(texto) {
+      const linkRegex = /(\/manuales\/[^\s]+)/g;
+      return texto.replace(
+        linkRegex,
+        '<a href="$1" target="_blank" rel="noopener noreferrer">📄 Ver manual</a>'
+      );
+    }
+
     async function enviar() {
       const input = document.getElementById("user-input");
       const mensaje = input.value.trim();
@@ -263,7 +242,13 @@
       const chat = document.getElementById("chat");
       const msg = document.createElement("div");
       msg.className = clase;
-      msg.innerText = texto;
+
+      if (clase === "bot") {
+        msg.innerHTML = renderRespuesta(texto);
+      } else {
+        msg.innerText = texto;
+      }
+
       chat.appendChild(msg);
       chat.scrollTop = chat.scrollHeight;
     }
