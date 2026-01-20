@@ -1,5 +1,5 @@
 import os
-from flask import Flask, request, render_template, jsonify, session
+from flask import Flask, request, render_template, jsonify, session, send_from_directory, abort
 from azure.ai.inference import ChatCompletionsClient
 from azure.ai.inference.models import SystemMessage, UserMessage, AssistantMessage
 from azure.core.credentials import AzureKeyCredential
@@ -60,7 +60,7 @@ CONOCIMIENTO BASE DEFINIDO
 """.strip()
 
 # =====================================================
-# GITHUB MODELS – LLAMA 3.1 70B
+# GITHUB MODELS – LLAMA
 # =====================================================
 
 def consultar_github(historial):
@@ -88,8 +88,8 @@ def consultar_github(historial):
         response = client.complete(
             model="Meta-Llama-3.1-8B-Instruct",
             messages=mensajes,
-            temperature=0.20,   # menos creativo
-            max_tokens=384,      # menos divague
+            temperature=0.20,
+            max_tokens=384,
             top_p=0.1
         )
         
@@ -109,8 +109,7 @@ def consultar_github(historial):
 @app.route("/")
 def index():
     session.permanent = True
-    if "historial" not in session:
-        session["historial"] = []
+    session.setdefault("historial", [])
     return render_template("index.html")
 
 @app.route("/chat", methods=["POST"])
@@ -122,7 +121,6 @@ def chat():
             return jsonify({"response": "Mensaje inválido."}), 400
 
         user_input = data["message"].strip()
-
         if not user_input:
             return jsonify({"response": "Decime algo para comenzar."})
 
@@ -150,10 +148,26 @@ def chat():
         return jsonify({"response": "⚠️ Error interno del servidor."}), 500
 
 # =====================================================
+# MANUALES INTERNOS (PDF)
+# =====================================================
+
+@app.route("/manuales/<path:filename>")
+def manuales(filename):
+    carpeta = os.path.join(app.root_path, "data", "manuales")
+
+    # Seguridad básica
+    if ".." in filename or filename.startswith("/"):
+        abort(403)
+
+    if not os.path.exists(os.path.join(carpeta, filename)):
+        abort(404)
+
+    return send_from_directory(carpeta, filename, as_attachment=False)
+
+# =====================================================
 # RUN
 # =====================================================
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
-
