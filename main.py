@@ -25,6 +25,48 @@ app.config.update(
 )
 
 # =====================================================
+# MANUALES INTERNOS – FUENTE ÚNICA DE VERDAD
+# =====================================================
+
+MANUALES_DISPONIBLES = {
+    "piscina": {
+        "titulo": "Piscina",
+        "archivo": "/manuales/piscina.pdf",
+        "keywords": [
+            "manual de la piscina",
+            "instrucciones de la piscina",
+            "mantenimiento de la piscina",
+            "como limpiar la piscina",
+            "entregame el manual de la piscina",
+            "tenes el manual de la piscina"
+        ]
+    }
+}
+
+# =====================================================
+# HELPERS MANUALES
+# =====================================================
+
+def es_pedido_lista_manuales(texto: str) -> bool:
+    texto = texto.lower()
+    triggers = [
+        "que manuales",
+        "manuales disponibles",
+        "busco info de manuales",
+        "que documentacion",
+        "tenes manuales"
+    ]
+    return any(t in texto for t in triggers)
+
+def buscar_manual(texto: str):
+    texto = texto.lower()
+    for manual in MANUALES_DISPONIBLES.values():
+        for kw in manual["keywords"]:
+            if kw in texto:
+                return manual
+    return None
+
+# =====================================================
 # CARGA DE SYSTEM + CONOCIMIENTO
 # =====================================================
 
@@ -66,7 +108,7 @@ CONOCIMIENTO BASE DEFINIDO
 def consultar_github(historial):
     token = os.getenv("GITHUB_TOKEN")
     if not token:
-        return "⚠️ Error: GITHUB_TOKEN no configurado."
+        return "⚠️ Error de configuración."
 
     endpoint = "https://models.inference.ai.azure.com"
 
@@ -78,7 +120,6 @@ def consultar_github(historial):
 
         mensajes = [SystemMessage(content=CONTEXTO_UNIFICADO)]
 
-        # Ventana deslizante estricta
         for msg in historial[-6:]:
             if msg["role"] == "user":
                 mensajes.append(UserMessage(content=msg["content"]))
@@ -92,14 +133,14 @@ def consultar_github(historial):
             max_tokens=384,
             top_p=0.1
         )
-        
+
         if response and response.choices:
             return response.choices[0].message.content.strip()
 
-        return "⚠️ El modelo no devolvió una respuesta válida."
+        return "No tengo una respuesta para eso."
 
     except Exception as e:
-        print(f"❌ ERROR GITHUB MODELS: {type(e).__name__} - {e}")
+        print(f"❌ ERROR GITHUB MODELS: {e}")
         return "⚠️ Error en la comunicación."
 
 # =====================================================
@@ -126,6 +167,34 @@ def chat():
 
         session.setdefault("historial", [])
 
+        # =================================================
+        # 1) LISTADO DE MANUALES (NO PASA POR EL MODELO)
+        # =================================================
+        if es_pedido_lista_manuales(user_input):
+            if not MANUALES_DISPONIBLES:
+                return jsonify({"response": "No tengo manuales internos disponibles."})
+
+            respuesta = "Tengo disponible el siguiente manual interno:\n"
+            for m in MANUALES_DISPONIBLES.values():
+                respuesta += f"- {m['titulo']}\n"
+
+            return jsonify({"response": respuesta.strip()})
+
+        # =================================================
+        # 2) MANUAL ESPECÍFICO (NO PASA POR EL MODELO)
+        # =================================================
+        manual = buscar_manual(user_input)
+        if manual:
+            return jsonify({
+                "response": (
+                    f"Podés consultar el manual de {manual['titulo']} acá:\n"
+                    f"{manual['archivo']}"
+                )
+            })
+
+        # =================================================
+        # 3) RESTO → MODELO
+        # =================================================
         session["historial"].append({
             "role": "user",
             "content": user_input
@@ -155,7 +224,6 @@ def chat():
 def manuales(filename):
     carpeta = os.path.join(app.root_path, "data", "manuales")
 
-    # Seguridad básica
     if ".." in filename or filename.startswith("/"):
         abort(403)
 
