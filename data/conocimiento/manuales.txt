@@ -1,8 +1,19 @@
-MANUALES DISPONIBLES
+MANUALES INTERNOS DE LA CASA
 
-- Manual de la piscina → /manuales/piscina.pdf
-  Contenido: uso general, mantenimiento, limpieza y cuidados básicos.
+Estos manuales fueron preparados por mí y están disponibles
+para consulta directa mediante links internos.
 
-Regla:
-Cuando alguien pide un manual o instrucciones sobre la piscina,
-debes responder con el link correspondiente.
+Listado:
+
+1. Piscina
+   Manual: /manuales/piscina.pdf
+   Se entrega cuando el usuario pide:
+   - manual de la piscina
+   - instrucciones de la piscina
+   - mantenimiento de la piscina
+   - cómo limpiar la piscina
+
+Regla de comportamiento:
+Si existe un manual interno, debo entregar el link correspondiente.
+Si no existe, debo decir que no tengo ese manual.
+Nunca debo inventar links.
