@@ -1,5 +1,6 @@
 import os
 import json
+import requests
 from flask import Flask, request, jsonify, render_template, session
 from datetime import timedelta
 
@@ -34,7 +35,7 @@ def cargar_manuales():
 MANUALES = cargar_manuales()
 
 # =====================================================
-# HELPERS
+# HELPERS MANUALES
 # =====================================================
 
 def buscar_manuales(texto: str):
@@ -54,11 +55,12 @@ def es_pedido_lista(texto: str) -> bool:
     texto = texto.lower()
     triggers = [
         "manuales",
+        "qué manuales",
         "que manuales",
         "lista de manuales",
         "tenes manuales",
-        "qué manuales guardas",
-        "documentacion"
+        "documentacion",
+        "documentación"
     ]
     return any(t in texto for t in triggers)
 
@@ -72,7 +74,8 @@ def es_pedido_otro(texto: str) -> bool:
         "algún otro manual",
         "otro manual",
         "hay otro",
-        "hay alguno más"
+        "hay alguno más",
+        "hay alguno mas"
     ]
 
 # =====================================================
@@ -89,6 +92,44 @@ def cargar_system_prompt():
 SYSTEM_PROMPT = cargar_system_prompt()
 
 # =====================================================
+# MODELO (OpenRouter / compatible)
+# =====================================================
+
+def consultar_modelo(system_prompt, historial, mensaje_usuario):
+    api_key = os.getenv("OPENROUTER_API_KEY")
+    if not api_key:
+        return "No tengo acceso al modelo en este momento."
+
+    url = "https://openrouter.ai/api/v1/chat/completions"
+
+    messages = [
+        {"role": "system", "content": system_prompt}
+    ]
+
+    for h in historial:
+        messages.append(h)
+
+    messages.append({"role": "user", "content": mensaje_usuario})
+
+    payload = {
+        "model": "meta-llama/llama-4-maverick:free",
+        "messages": messages,
+        "temperature": 0.3
+    }
+
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json"
+    }
+
+    try:
+        r = requests.post(url, headers=headers, json=payload, timeout=30)
+        r.raise_for_status()
+        return r.json()["choices"][0]["message"]["content"].strip()
+    except Exception:
+        return "No pude responder en este momento."
+
+# =====================================================
 # RUTAS
 # =====================================================
 
@@ -96,6 +137,7 @@ SYSTEM_PROMPT = cargar_system_prompt()
 def index():
     session.permanent = True
     session.setdefault("historial", [])
+    session.setdefault("manuales_mostrados", [])
     return render_template("index.html")
 
 
@@ -113,12 +155,7 @@ def chat():
     # 1️⃣ LISTA DE MANUALES
     # ============================
     if es_pedido_lista(mensaje):
-        if not MANUALES:
-            return jsonify({
-                "type": "text",
-                "text": "No tengo manuales internos disponibles."
-            })
-
+        session["manuales_mostrados"] = MANUALES
         return jsonify({
             "type": "manual_list",
             "manuales": MANUALES
@@ -129,6 +166,7 @@ def chat():
     # ============================
     encontrados = buscar_manuales(mensaje)
     if encontrados:
+        session["manuales_mostrados"] = encontrados
         return jsonify({
             "type": "manual_list",
             "manuales": encontrados
@@ -138,19 +176,41 @@ def chat():
     # 3️⃣ PEDIDO DE “OTRO”
     # ============================
     if es_pedido_otro(mensaje):
+        ya_mostrados = session.get("manuales_mostrados", [])
+        restantes = [m for m in MANUALES if m not in ya_mostrados]
+
+        if restantes:
+            session["manuales_mostrados"] = restantes
+            return jsonify({
+                "type": "manual_list",
+                "manuales": restantes
+            })
+
         return jsonify({
             "type": "text",
-            "text": "No tengo otros manuales además de los que ya te mostré."
+            "text": "No hay otros manuales disponibles."
         })
 
     # ============================
-    # 4️⃣ FALLBACK CONTROLADO
+    # 4️⃣ TODO LO DEMÁS → MODELO
     # ============================
+    historial = session.get("historial", [])
+
+    respuesta = consultar_modelo(
+        system_prompt=SYSTEM_PROMPT,
+        historial=historial,
+        mensaje_usuario=mensaje
+    )
+
+    historial.append({"role": "user", "content": mensaje})
+    historial.append({"role": "assistant", "content": respuesta})
+
+    session["historial"] = historial[-12:]
+
     return jsonify({
         "type": "text",
-        "text": "Puedo ayudarte con manuales internos o con consultas generales."
+        "text": respuesta
     })
-
 
 # =====================================================
 # RUN
