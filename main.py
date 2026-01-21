@@ -41,7 +41,7 @@ MANUALES_DISPONIBLES = {
             "como limpiar la piscina",
             "manual piscina",
             "instrucciones piscina",
-            "piscina"
+            "manual sobre la piscina"
         ]
     }
 }
@@ -49,9 +49,6 @@ MANUALES_DISPONIBLES = {
 # =====================================================
 # HELPERS MANUALES
 # =====================================================
-
-def contiene_palabra_manual(texto: str) -> bool:
-    return "manual" in texto.lower()
 
 def es_pedido_lista_manuales(texto: str) -> bool:
     texto = texto.lower()
@@ -73,8 +70,8 @@ def buscar_manual(texto: str):
     return None
 
 def existe_archivo_static(ruta_publica: str) -> bool:
-    ruta = ruta_publica.replace("/static/", "")
-    ruta_fisica = os.path.join(app.root_path, "static", ruta)
+    ruta_relativa = ruta_publica.replace("/static/", "")
+    ruta_fisica = os.path.join(app.root_path, "static", ruta_relativa)
     return os.path.exists(ruta_fisica)
 
 # =====================================================
@@ -124,7 +121,7 @@ CONOCIMIENTO BASE DEFINIDO
 """.strip()
 
 # =====================================================
-# MODELO
+# MODELO (SOLO PARA TEXTO GENERAL)
 # =====================================================
 
 def consultar_github(historial):
@@ -151,7 +148,7 @@ def consultar_github(historial):
         response = client.complete(
             model="Meta-Llama-3.1-8B-Instruct",
             messages=mensajes,
-            temperature=0.2,
+            temperature=0.20,
             max_tokens=384,
             top_p=0.1
         )
@@ -192,42 +189,25 @@ def chat():
         # 1) LISTADO DE MANUALES
         # =================================================
         if es_pedido_lista_manuales(user_input):
-            if not MANUALES_DISPONIBLES:
-                return jsonify({"response": "No tengo manuales internos disponibles."})
-
-            respuesta = "Tengo disponible el siguiente manual interno:\n"
-            for m in MANUALES_DISPONIBLES.values():
-                respuesta += f"- {m['titulo']}\n"
-
-            return jsonify({"response": respuesta.strip()})
+            titulos = [m["titulo"] for m in MANUALES_DISPONIBLES.values()]
+            return jsonify({
+                "type": "manual_list",
+                "items": titulos
+            })
 
         # =================================================
         # 2) MANUAL ESPECÍFICO
         # =================================================
         manual = buscar_manual(user_input)
-        if manual:
-            if not existe_archivo_static(manual["archivo"]):
-                return jsonify({
-                    "response": "El manual interno existe pero no está disponible."
-                })
-
+        if manual and existe_archivo_static(manual["archivo"]):
             return jsonify({
-                "response": (
-                    f"Tengo un manual interno sobre **{manual['titulo']}**.\n"
-                    f"{manual['archivo']}"
-                )
+                "type": "manual",
+                "title": manual["titulo"],
+                "url": manual["archivo"]
             })
 
         # =================================================
-        # 2.1) MENCIONA MANUAL PERO NO EXISTE
-        # =================================================
-        if contiene_palabra_manual(user_input):
-            return jsonify({
-                "response": "No tengo un manual interno sobre ese tema."
-            })
-
-        # =================================================
-        # 3) RESTO → MODELO
+        # 3) TEXTO NORMAL → MODELO
         # =================================================
         session["historial"].append({
             "role": "user",
