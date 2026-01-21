@@ -35,13 +35,11 @@ MANUALES_DISPONIBLES = {
         "titulo": "Manejo de la piscina",
         "archivo": "/static/manuales/piscina.pdf",
         "keywords": [
-            "manual de la piscina",
+            "piscina",
+            "manual piscina",
             "manejo de la piscina",
             "mantenimiento de la piscina",
-            "como limpiar la piscina",
-            "manual piscina",
-            "instrucciones piscina",
-            "manual sobre la piscina"
+            "limpiar la piscina"
         ]
     }
 }
@@ -50,23 +48,16 @@ MANUALES_DISPONIBLES = {
 # HELPERS MANUALES
 # =====================================================
 
-def es_pedido_lista_manuales(texto: str) -> bool:
+def es_pedido_manual(texto: str) -> bool:
     texto = texto.lower()
-    triggers = [
-        "que manuales",
-        "manuales disponibles",
-        "tenes manuales",
-        "documentacion",
-        "manual interno"
-    ]
+    triggers = ["manual", "manuales", "documentacion", "guia", "instrucciones"]
     return any(t in texto for t in triggers)
 
 def buscar_manual(texto: str):
     texto = texto.lower()
     for manual in MANUALES_DISPONIBLES.values():
-        for kw in manual["keywords"]:
-            if kw in texto:
-                return manual
+        if any(kw in texto for kw in manual["keywords"]):
+            return manual
     return None
 
 def existe_archivo_static(ruta_publica: str) -> bool:
@@ -75,7 +66,7 @@ def existe_archivo_static(ruta_publica: str) -> bool:
     return os.path.exists(ruta_fisica)
 
 # =====================================================
-# CARGA DE SYSTEM + CONOCIMIENTO
+# SYSTEM + CONOCIMIENTO
 # =====================================================
 
 def cargar_system_prompt():
@@ -85,43 +76,10 @@ def cargar_system_prompt():
             return f.read().strip()
     return "Sos AlmostMe, el clon digital conversacional de Juan."
 
-def cargar_conocimiento():
-    base_path = "data/conocimiento"
-    texto = ""
-
-    if not os.path.exists(base_path):
-        return texto
-
-    for archivo in sorted(os.listdir(base_path)):
-        ruta = os.path.join(base_path, archivo)
-
-        if archivo.endswith(".json"):
-            with open(ruta, "r", encoding="utf-8") as f:
-                data = json.load(f)
-                texto += f"\n### {archivo}\n"
-                texto += json.dumps(data, ensure_ascii=False, indent=2)
-
-        elif archivo.endswith(".txt"):
-            with open(ruta, "r", encoding="utf-8") as f:
-                texto += f"\n### {archivo}\n{f.read().strip()}\n"
-
-    return texto.strip()
-
 SYSTEM_PROMPT = cargar_system_prompt()
-CONOCIMIENTO = cargar_conocimiento()
-
-CONTEXTO_UNIFICADO = f"""
-{SYSTEM_PROMPT}
-
-────────────────────────────────────────
-CONOCIMIENTO BASE DEFINIDO
-────────────────────────────────────────
-
-{CONOCIMIENTO}
-""".strip()
 
 # =====================================================
-# MODELO (SOLO PARA TEXTO GENERAL)
+# MODELO (LLAMA)
 # =====================================================
 
 def consultar_github(historial):
@@ -131,36 +89,28 @@ def consultar_github(historial):
 
     endpoint = "https://models.inference.ai.azure.com"
 
-    try:
-        client = ChatCompletionsClient(
-            endpoint=endpoint,
-            credential=AzureKeyCredential(token),
-        )
+    client = ChatCompletionsClient(
+        endpoint=endpoint,
+        credential=AzureKeyCredential(token),
+    )
 
-        mensajes = [SystemMessage(content=CONTEXTO_UNIFICADO)]
+    mensajes = [SystemMessage(content=SYSTEM_PROMPT)]
 
-        for msg in historial[-6:]:
-            if msg["role"] == "user":
-                mensajes.append(UserMessage(content=msg["content"]))
-            elif msg["role"] == "assistant":
-                mensajes.append(AssistantMessage(content=msg["content"]))
+    for msg in historial[-6:]:
+        if msg["role"] == "user":
+            mensajes.append(UserMessage(content=msg["content"]))
+        elif msg["role"] == "assistant":
+            mensajes.append(AssistantMessage(content=msg["content"]))
 
-        response = client.complete(
-            model="Meta-Llama-3.1-8B-Instruct",
-            messages=mensajes,
-            temperature=0.20,
-            max_tokens=384,
-            top_p=0.1
-        )
+    response = client.complete(
+        model="Meta-Llama-3.1-8B-Instruct",
+        messages=mensajes,
+        temperature=0.2,
+        max_tokens=384,
+        top_p=0.1
+    )
 
-        if response and response.choices:
-            return response.choices[0].message.content.strip()
-
-        return "No tengo una respuesta para eso."
-
-    except Exception as e:
-        print(f"❌ ERROR MODELO: {e}")
-        return "Error en la comunicación."
+    return response.choices[0].message.content.strip()
 
 # =====================================================
 # RUTAS
@@ -174,31 +124,19 @@ def index():
 
 @app.route("/chat", methods=["POST"])
 def chat():
-    try:
-        data = request.get_json(force=True, silent=True)
-        if not data or "message" not in data:
-            return jsonify({"response": "Mensaje inválido."}), 400
+    data = request.get_json(force=True)
+    user_input = data.get("message", "").strip()
 
-        user_input = data["message"].strip()
-        if not user_input:
-            return jsonify({"response": "Decime algo para comenzar."})
+    if not user_input:
+        return jsonify({ "type": "text", "response": "Decime algo para comenzar." })
 
-        session.setdefault("historial", [])
+    # =================================================
+    # MANUALES → SOLO BACKEND (NUNCA MODELO)
+    # =================================================
 
-        # =================================================
-        # 1) LISTADO DE MANUALES
-        # =================================================
-        if es_pedido_lista_manuales(user_input):
-            titulos = [m["titulo"] for m in MANUALES_DISPONIBLES.values()]
-            return jsonify({
-                "type": "manual_list",
-                "items": titulos
-            })
-
-        # =================================================
-        # 2) MANUAL ESPECÍFICO
-        # =================================================
+    if es_pedido_manual(user_input):
         manual = buscar_manual(user_input)
+
         if manual and existe_archivo_static(manual["archivo"]):
             return jsonify({
                 "type": "manual",
@@ -206,29 +144,34 @@ def chat():
                 "url": manual["archivo"]
             })
 
-        # =================================================
-        # 3) TEXTO NORMAL → MODELO
-        # =================================================
-        session["historial"].append({
-            "role": "user",
-            "content": user_input
+        return jsonify({
+            "type": "text",
+            "response": "No tengo un manual interno sobre ese tema."
         })
 
-        respuesta = consultar_github(session["historial"])
+    # =================================================
+    # RESTO → MODELO
+    # =================================================
 
-        session["historial"].append({
-            "role": "assistant",
-            "content": respuesta
-        })
+    session["historial"].append({
+        "role": "user",
+        "content": user_input
+    })
 
-        session["historial"] = session["historial"][-12:]
-        session.modified = True
+    respuesta = consultar_github(session["historial"])
 
-        return jsonify({"response": respuesta})
+    session["historial"].append({
+        "role": "assistant",
+        "content": respuesta
+    })
 
-    except Exception as e:
-        print(f"❌ ERROR /chat: {e}")
-        return jsonify({"response": "Error interno del servidor."}), 500
+    session["historial"] = session["historial"][-12:]
+    session.modified = True
+
+    return jsonify({
+        "type": "text",
+        "response": respuesta
+    })
 
 # =====================================================
 # RUN
