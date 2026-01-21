@@ -2,10 +2,12 @@
   "id": "piscina",
   "titulo": "Manual de manejo de piscina",
   "disparadores": [
-    "manual de piscina o de pileta",
-    "instrucciones de la piscina o de la pileta",
-    "como mantener la piscina o la pileta",
-    "manejo de piscina o de la pileta",
+    "manual de piscina",
+    "instrucciones de la piscina",
+    "como mantener la piscina",
+    "manejo de piscina",
+    "cloro piscina",
+    "ph piscina"
   ],
   "respuesta": "Tengo un manual interno sobre el manejo de la piscina.",
   "link": "/manuales/piscina.pdf"
