@@ -1,159 +1,219 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<title>AlmostMe – Clon Interactivo</title>
+  <meta charset="UTF-8">
+  <title>AlmostMe – Clon Interactivo</title>
 
-<style>
-body {
-  margin: 0;
-  height: 100vh;
-  background: #020617;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-family: system-ui;
-}
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      background: #020617;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: system-ui;
+    }
 
-.container {
-  width: 380px;
-  height: 600px;
-  background: #0f172a;
-  border-radius: 18px;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-  display: flex;
-  flex-direction: column;
-  position: relative;
-}
+    .container {
+      width: 380px;
+      height: 600px;
+      background: #0f172a;
+      border-radius: 18px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
 
-#chat {
-  flex: 1;
-  padding: 20px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
+    /* VIDEO */
+    .video-bubble {
+      position: absolute;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 110px;
+      height: 110px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 3px solid #2563eb;
+      background: black;
+      z-index: 10;
+    }
 
-.user, .bot {
-  max-width: 85%;
-  padding: 10px 12px;
-  border-radius: 12px;
-  font-size: 14px;
-}
+    .video-bubble video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
 
-.user {
-  align-self: flex-end;
-  background: #2563eb;
-  color: white;
-}
+    /* CHAT */
+    #chat {
+      flex: 1;
+      padding: 140px 12px 12px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
 
-.bot {
-  align-self: flex-start;
-  background: #1e293b;
-  color: #e5e7eb;
-}
+    .user, .bot {
+      max-width: 85%;
+      padding: 10px 12px;
+      border-radius: 12px;
+      font-size: 14px;
+      line-height: 1.4;
+    }
 
-.manual-card {
-  background: #020617;
-  border: 1px solid #334155;
-  border-radius: 14px;
-  padding: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
+    .user {
+      align-self: flex-end;
+      background: #2563eb;
+      color: white;
+    }
 
-.manual-card a {
-  color: #38bdf8;
-  font-weight: bold;
-  text-decoration: none;
-}
+    .bot {
+      align-self: flex-start;
+      background: #1e293b;
+      color: #e5e7eb;
+    }
 
-#input-container {
-  display: flex;
-  gap: 8px;
-  padding: 10px;
-  border-top: 1px solid #1e293b;
-}
+    /* CARD MANUAL */
+    .manual-card {
+      background: #020617;
+      border: 1px solid #1e293b;
+      border-radius: 14px;
+      padding: 14px;
+      margin-top: 6px;
+      cursor: pointer;
+      transition: all .2s ease;
+    }
 
-input {
-  flex: 1;
-  padding: 10px;
-  border-radius: 10px;
-  background: #020617;
-  color: white;
-  border: 1px solid #334155;
-}
+    .manual-card:hover {
+      border-color: #38bdf8;
+      box-shadow: 0 0 0 1px rgba(56,189,248,.4);
+    }
 
-button {
-  padding: 10px 14px;
-  border-radius: 10px;
-  border: none;
-  background: #2563eb;
-  color: white;
-}
-</style>
+    .manual-title {
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .manual-link {
+      color: #38bdf8;
+      font-size: 13px;
+    }
+
+    /* INPUT */
+    #input-container {
+      display: flex;
+      gap: 8px;
+      padding: 10px;
+      background: #020617;
+      border-top: 1px solid #1e293b;
+    }
+
+    input {
+      flex: 1;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid #334155;
+      background: #020617;
+      color: white;
+    }
+
+    button {
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: none;
+      background: #2563eb;
+      color: white;
+      cursor: pointer;
+    }
+  </style>
 </head>
 
 <body>
 
 <div class="container">
 
+  <div class="video-bubble">
+    <video autoplay muted loop playsinline>
+      <source src="/static/clone.mp4" type="video/mp4">
+    </video>
+  </div>
+
   <div id="chat">
     <div class="bot">Hola, soy AlmostMe. ¿En qué puedo ayudarte?</div>
   </div>
 
   <div id="input-container">
-    <input id="user-input" placeholder="Escribí tu mensaje…" onkeydown="if(event.key==='Enter') enviar()">
+    <input id="user-input" placeholder="Escribí tu mensaje..."
+           onkeydown="if(event.key==='Enter') enviar()">
     <button onclick="enviar()">Enviar</button>
   </div>
 
 </div>
 
 <script>
-function agregarTexto(texto, clase) {
-  const chat = document.getElementById("chat");
-  const div = document.createElement("div");
-  div.className = clase;
-  div.innerText = texto;
-  chat.appendChild(div);
-  chat.scrollTop = chat.scrollHeight;
-}
-
-function agregarManual(data) {
-  const chat = document.getElementById("chat");
-  const card = document.createElement("div");
-  card.className = "manual-card bot";
-  card.innerHTML = `
-    <strong>📘 ${data.title}</strong>
-    <a href="${data.url}" target="_blank">📄 Ver manual</a>
-  `;
-  chat.appendChild(card);
-  chat.scrollTop = chat.scrollHeight;
-}
-
 async function enviar() {
   const input = document.getElementById("user-input");
-  const mensaje = input.value.trim();
-  if (!mensaje) return;
+  const texto = input.value.trim();
+  if (!texto) return;
 
-  agregarTexto(mensaje, "user");
+  agregarTexto(texto, "user");
   input.value = "";
 
   const res = await fetch("/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ message: mensaje })
+    body: JSON.stringify({ message: texto })
   });
 
   const data = await res.json();
+  renderRespuesta(data);
+}
+
+function agregarTexto(texto, tipo) {
+  const chat = document.getElementById("chat");
+  const div = document.createElement("div");
+  div.className = tipo;
+  div.innerText = texto;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function renderRespuesta(data) {
+  const chat = document.getElementById("chat");
+
+  if (data.type === "text") {
+    agregarTexto(data.text, "bot");
+    return;
+  }
 
   if (data.type === "manual") {
-    agregarManual(data);
-  } else {
-    agregarTexto(data.response, "bot");
+    const card = document.createElement("div");
+    card.className = "manual-card bot";
+    card.onclick = () => window.open(data.manual.url, "_blank");
+
+    card.innerHTML = `
+      <div class="manual-title">📘 ${data.manual.titulo}</div>
+      <div class="manual-link">Ver manual</div>
+    `;
+
+    chat.appendChild(card);
   }
+
+  if (data.type === "manual_list") {
+    data.manuales.forEach(m => {
+      const card = document.createElement("div");
+      card.className = "manual-card bot";
+      card.innerHTML = `<div class="manual-title">📘 ${m.titulo}</div>`;
+      chat.appendChild(card);
+    });
+  }
+
+  chat.scrollTop = chat.scrollHeight;
 }
 </script>
 
