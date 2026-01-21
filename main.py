@@ -33,15 +33,13 @@ def cargar_manuales():
         with open(os.path.join(base_path, archivo), encoding="utf-8") as f:
             data = json.load(f)
 
-            manual = {
+            manuales.append({
                 "id": data["id"],
                 "titulo": data["titulo"],
                 "descripcion": data.get("descripcion", ""),
                 "disparadores": data.get("disparadores", []),
                 "link": f"/static/manuales/{data['id']}.pdf"
-            }
-
-            manuales.append(manual)
+            })
 
     return manuales
 
@@ -67,7 +65,7 @@ def buscar_manuales(texto: str):
 
 def es_pedido_lista(texto: str) -> bool:
     texto = texto.lower()
-    triggers = [
+    return any(t in texto for t in [
         "manuales",
         "qué manuales",
         "que manuales",
@@ -75,13 +73,11 @@ def es_pedido_lista(texto: str) -> bool:
         "tenes manuales",
         "documentacion",
         "documentación"
-    ]
-    return any(t in texto for t in triggers)
+    ])
 
 
 def es_pedido_otro(texto: str) -> bool:
-    texto = texto.lower().strip()
-    return texto in [
+    return texto.lower().strip() in [
         "otro",
         "algún otro",
         "algun otro",
@@ -92,39 +88,64 @@ def es_pedido_otro(texto: str) -> bool:
         "hay alguno mas"
     ]
 
-
 # =====================================================
-# SYSTEM PROMPT
+# SYSTEM + CONOCIMIENTO
 # =====================================================
 
 def cargar_system_prompt():
     ruta = "data/prompts/system.txt"
-    if os.path.exists(ruta):
-        with open(ruta, encoding="utf-8") as f:
-            return f.read()
-    return ""
+    return open(ruta, encoding="utf-8").read() if os.path.exists(ruta) else ""
+
+
+def cargar_conocimiento():
+    base_path = "data/conocimiento"
+    bloques = []
+
+    if not os.path.exists(base_path):
+        return ""
+
+    for archivo in sorted(os.listdir(base_path)):
+        if archivo.endswith(".txt"):
+            with open(os.path.join(base_path, archivo), encoding="utf-8") as f:
+                contenido = f.read().strip()
+                if contenido:
+                    bloques.append(f"### {archivo}\n{contenido}")
+
+    return "\n\n".join(bloques)
+
 
 SYSTEM_PROMPT = cargar_system_prompt()
+CONOCIMIENTO = cargar_conocimiento()
 
 # =====================================================
-# MODELO (GitHub / OpenAI compatible)
+# MODELO (GitHub)
 # =====================================================
 
-def consultar_modelo(system_prompt, historial, mensaje_usuario):
+def consultar_modelo(system_prompt, conocimiento, historial, mensaje_usuario):
     api_key = os.getenv("GITHUB_TOKEN")
     if not api_key:
         return "No tengo acceso al modelo en este momento."
 
     url = "https://models.inference.ai.azure.com/chat/completions"
 
-    messages = [{"role": "system", "content": system_prompt}]
+    messages = [
+        {
+            "role": "system",
+            "content": system_prompt
+        },
+        {
+            "role": "system",
+            "content": f"CONOCIMIENTO DISPONIBLE:\n\n{conocimiento}"
+        }
+    ]
+
     messages.extend(historial)
     messages.append({"role": "user", "content": mensaje_usuario})
 
     payload = {
         "model": "gpt-4o-mini",
         "messages": messages,
-        "temperature": 0.3
+        "temperature": 0.2
     }
 
     headers = {
@@ -161,66 +182,43 @@ def chat():
     if not mensaje:
         return jsonify({"type": "text", "text": "Decime algo para comenzar."})
 
-    # ============================
     # 1️⃣ LISTA DE MANUALES
-    # ============================
     if es_pedido_lista(mensaje):
         session["manuales_mostrados"] = MANUALES
-        return jsonify({
-            "type": "manual_list",
-            "manuales": MANUALES
-        })
+        return jsonify({"type": "manual_list", "manuales": MANUALES})
 
-    # ============================
     # 2️⃣ BUSCAR MANUAL
-    # ============================
     encontrados = buscar_manuales(mensaje)
     if encontrados:
         session["manuales_mostrados"] = encontrados
-        return jsonify({
-            "type": "manual_list",
-            "manuales": encontrados
-        })
+        return jsonify({"type": "manual_list", "manuales": encontrados})
 
-    # ============================
     # 3️⃣ PEDIDO DE “OTRO”
-    # ============================
     if es_pedido_otro(mensaje):
         ya = session.get("manuales_mostrados", [])
         restantes = [m for m in MANUALES if m not in ya]
 
         if restantes:
             session["manuales_mostrados"] = restantes
-            return jsonify({
-                "type": "manual_list",
-                "manuales": restantes
-            })
+            return jsonify({"type": "manual_list", "manuales": restantes})
 
-        return jsonify({
-            "type": "text",
-            "text": "No hay otros manuales disponibles."
-        })
+        return jsonify({"type": "text", "text": "No hay otros manuales disponibles."})
 
-    # ============================
     # 4️⃣ CONVERSACIÓN GENERAL
-    # ============================
     historial = session.get("historial", [])
 
     respuesta = consultar_modelo(
-        system_prompt=SYSTEM_PROMPT,
-        historial=historial,
-        mensaje_usuario=mensaje
+        SYSTEM_PROMPT,
+        CONOCIMIENTO,
+        historial,
+        mensaje
     )
 
     historial.append({"role": "user", "content": mensaje})
     historial.append({"role": "assistant", "content": respuesta})
     session["historial"] = historial[-12:]
 
-    return jsonify({
-        "type": "text",
-        "text": respuesta
-    })
-
+    return jsonify({"type": "text", "text": respuesta})
 
 # =====================================================
 # RUN
