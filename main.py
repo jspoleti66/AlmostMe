@@ -32,6 +32,7 @@ def cargar_manuales():
 
     return manuales
 
+
 MANUALES = cargar_manuales()
 
 # =====================================================
@@ -86,48 +87,44 @@ def cargar_system_prompt():
     ruta = "data/prompts/system.txt"
     if os.path.exists(ruta):
         with open(ruta, encoding="utf-8") as f:
-            return f.read()
-    return ""
+            return f.read().strip()
+    return "Sos AlmostMe."
+
 
 SYSTEM_PROMPT = cargar_system_prompt()
 
 # =====================================================
-# MODELO (OpenRouter / compatible)
+# MODELO – GITHUB MODELS (SELLADO)
 # =====================================================
 
 def consultar_modelo(system_prompt, historial, mensaje_usuario):
-    api_key = os.getenv("OPENROUTER_API_KEY")
-    if not api_key:
-        return "No tengo acceso al modelo en este momento."
+    token = os.getenv("GITHUB_TOKEN")
+    if not token:
+        raise Exception("GITHUB_TOKEN no definido")
 
-    url = "https://openrouter.ai/api/v1/chat/completions"
+    url = "https://models.inference.ai.azure.com/chat/completions"
 
-    messages = [
-        {"role": "system", "content": system_prompt}
-    ]
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {token}"
+    }
 
-    for h in historial:
-        messages.append(h)
-
+    messages = [{"role": "system", "content": system_prompt}]
+    messages.extend(historial)
     messages.append({"role": "user", "content": mensaje_usuario})
 
     payload = {
-        "model": "meta-llama/llama-4-maverick:free",
+        "model": "gpt-4o-mini",
         "messages": messages,
-        "temperature": 0.3
+        "temperature": 0.3,
+        "max_tokens": 300
     }
 
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json"
-    }
+    r = requests.post(url, headers=headers, json=payload, timeout=20)
+    r.raise_for_status()
 
-    try:
-        r = requests.post(url, headers=headers, json=payload, timeout=30)
-        r.raise_for_status()
-        return r.json()["choices"][0]["message"]["content"].strip()
-    except Exception:
-        return "No pude responder en este momento."
+    data = r.json()
+    return data["choices"][0]["message"]["content"].strip()
 
 # =====================================================
 # RUTAS
@@ -176,8 +173,8 @@ def chat():
     # 3️⃣ PEDIDO DE “OTRO”
     # ============================
     if es_pedido_otro(mensaje):
-        ya_mostrados = session.get("manuales_mostrados", [])
-        restantes = [m for m in MANUALES if m not in ya_mostrados]
+        ya = session.get("manuales_mostrados", [])
+        restantes = [m for m in MANUALES if m not in ya]
 
         if restantes:
             session["manuales_mostrados"] = restantes
@@ -192,19 +189,25 @@ def chat():
         })
 
     # ============================
-    # 4️⃣ TODO LO DEMÁS → MODELO
+    # 4️⃣ CONVERSACIÓN GENERAL
     # ============================
     historial = session.get("historial", [])
 
-    respuesta = consultar_modelo(
-        system_prompt=SYSTEM_PROMPT,
-        historial=historial,
-        mensaje_usuario=mensaje
-    )
+    try:
+        respuesta = consultar_modelo(
+            system_prompt=SYSTEM_PROMPT,
+            historial=historial,
+            mensaje_usuario=mensaje
+        )
+    except Exception as e:
+        print("ERROR MODELO:", e)
+        return jsonify({
+            "type": "text",
+            "text": "Ahora mismo no puedo responder eso."
+        })
 
     historial.append({"role": "user", "content": mensaje})
     historial.append({"role": "assistant", "content": respuesta})
-
     session["historial"] = historial[-12:]
 
     return jsonify({
