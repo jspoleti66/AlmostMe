@@ -1,4 +1,5 @@
 import os
+import json
 from flask import Flask, request, render_template, jsonify, session, send_from_directory, abort
 from azure.ai.inference import ChatCompletionsClient
 from azure.ai.inference.models import SystemMessage, UserMessage, AssistantMessage
@@ -25,23 +26,26 @@ app.config.update(
 )
 
 # =====================================================
-# MANUALES INTERNOS – FUENTE ÚNICA DE VERDAD
+# CARGA DE MANUALES DESDE JSON (FUENTE ÚNICA)
 # =====================================================
 
-MANUALES_DISPONIBLES = {
-    "piscina": {
-        "titulo": "Piscina",
-        "archivo": "/manuales/piscina.pdf",
-        "keywords": [
-            "manual de la piscina",
-            "instrucciones de la piscina",
-            "mantenimiento de la piscina",
-            "como limpiar la piscina",
-            "entregame el manual de la piscina",
-            "tenes el manual de la piscina"
-        ]
-    }
-}
+def cargar_manuales():
+    manuales = []
+    base_path = "data/manuales"
+
+    if not os.path.exists(base_path):
+        return manuales
+
+    for archivo in os.listdir(base_path):
+        if archivo.endswith(".json"):
+            ruta = os.path.join(base_path, archivo)
+            with open(ruta, "r", encoding="utf-8") as f:
+                manuales.append(json.load(f))
+
+    return manuales
+
+
+MANUALES = cargar_manuales()
 
 # =====================================================
 # HELPERS MANUALES
@@ -52,18 +56,21 @@ def es_pedido_lista_manuales(texto: str) -> bool:
     triggers = [
         "que manuales",
         "manuales disponibles",
-        "busco info de manuales",
         "que documentacion",
-        "tenes manuales"
+        "tenes manuales",
+        "manuales internos"
     ]
     return any(t in texto for t in triggers)
 
-def buscar_manual(texto: str):
+
+def detectar_manual(texto: str):
     texto = texto.lower()
-    for manual in MANUALES_DISPONIBLES.values():
-        for kw in manual["keywords"]:
-            if kw in texto:
+
+    for manual in MANUALES:
+        for trigger in manual.get("disparadores", []):
+            if trigger in texto:
                 return manual
+
     return None
 
 # =====================================================
@@ -77,7 +84,6 @@ def cargar_system_prompt():
             return f.read().strip()
     return "Sos AlmostMe, el clon digital conversacional de Juan."
 
-import json
 
 def cargar_conocimiento():
     base_path = "data/conocimiento"
@@ -101,6 +107,7 @@ def cargar_conocimiento():
 
     return texto.strip()
 
+
 SYSTEM_PROMPT = cargar_system_prompt()
 CONOCIMIENTO = cargar_conocimiento()
 
@@ -115,7 +122,7 @@ CONOCIMIENTO BASE DEFINIDO
 """.strip()
 
 # =====================================================
-# GITHUB MODELS – LLAMA
+# MODELO (GITHUB MODELS / AZURE)
 # =====================================================
 
 def consultar_github(historial):
@@ -153,7 +160,7 @@ def consultar_github(historial):
         return "No tengo una respuesta para eso."
 
     except Exception as e:
-        print(f"❌ ERROR GITHUB MODELS: {e}")
+        print(f"❌ ERROR MODELO: {e}")
         return "⚠️ Error en la comunicación."
 
 # =====================================================
@@ -165,6 +172,7 @@ def index():
     session.permanent = True
     session.setdefault("historial", [])
     return render_template("index.html")
+
 
 @app.route("/chat", methods=["POST"])
 def chat():
@@ -181,44 +189,43 @@ def chat():
         session.setdefault("historial", [])
 
         # =================================================
-        # 1) LISTADO DE MANUALES (NO PASA POR EL MODELO)
+        # 1) LISTADO DE MANUALES
         # =================================================
         if es_pedido_lista_manuales(user_input):
-            if not MANUALES_DISPONIBLES:
+            if not MANUALES:
                 return jsonify({"response": "No tengo manuales internos disponibles."})
 
-            respuesta = "Tengo disponible el siguiente manual interno:\n"
-            for m in MANUALES_DISPONIBLES.values():
+            respuesta = "Tengo disponibles los siguientes manuales internos:\n"
+            for m in MANUALES:
                 respuesta += f"- {m['titulo']}\n"
 
             return jsonify({"response": respuesta.strip()})
 
         # =================================================
-        # 2) MANUAL ESPECÍFICO (NO PASA POR EL MODELO)
+        # 2) MANUAL ESPECÍFICO
         # =================================================
-        
-        manual = buscar_manual(user_input)
+        manual = detectar_manual(user_input)
         if manual:
             ruta_fisica = os.path.join(
                 app.root_path,
                 "data",
-                manual["archivo"].lstrip("/")
+                manual["link"].lstrip("/")
             )
-        
+
             if not os.path.exists(ruta_fisica):
                 return jsonify({
                     "response": "No tengo un manual interno disponible sobre ese tema."
                 })
-        
-            return jsonify({
-                "response": (
-                    f"Podés consultar el manual de {manual['titulo']} acá:\n"
-                    f"{manual['archivo']}"
-                )
-            })
+
+            respuesta = (
+                f"{manual['respuesta']}\n"
+                f"{manual['link']}"
+            )
+
+            return jsonify({"response": respuesta})
 
         # =================================================
-        # 3) RESTO → MODELO
+        # 3) MODELO
         # =================================================
         session["historial"].append({
             "role": "user",
@@ -242,7 +249,7 @@ def chat():
         return jsonify({"response": "⚠️ Error interno del servidor."}), 500
 
 # =====================================================
-# MANUALES INTERNOS (PDF)
+# SERVIR PDF DE MANUALES
 # =====================================================
 
 @app.route("/manuales/<path:filename>")
@@ -264,5 +271,3 @@ def manuales(filename):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
-
-
