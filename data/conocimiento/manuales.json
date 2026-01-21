@@ -4,14 +4,12 @@
       "id": "piscina",
       "titulo": "Manual de manejo de piscina",
       "descripcion": "Guía operativa para el mantenimiento, control químico y limpieza de la piscina.",
-      "ruta": "/manuales/piscina",
       "temas": ["cloro", "ph", "filtro", "limpieza", "bomba"]
     },
     {
       "id": "jardin",
       "titulo": "Manual de jardinería básica",
       "descripcion": "Cuidados generales del jardín y riego.",
-      "ruta": "/manuales/jardin",
       "temas": ["riego", "plantas", "césped"]
     }
   ]
