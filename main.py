@@ -1,6 +1,6 @@
 import os
 import json
-from flask import Flask, request, render_template, jsonify, session, send_from_directory, abort
+from flask import Flask, request, render_template, jsonify, session
 from azure.ai.inference import ChatCompletionsClient
 from azure.ai.inference.models import SystemMessage, UserMessage, AssistantMessage
 from azure.core.credentials import AzureKeyCredential
@@ -26,26 +26,24 @@ app.config.update(
 )
 
 # =====================================================
-# CARGA DE MANUALES DESDE JSON (FUENTE ÚNICA)
+# MANUALES INTERNOS (FUENTE ÚNICA DE VERDAD)
+# Archivos físicos en: static/manuales/
 # =====================================================
 
-def cargar_manuales():
-    manuales = []
-    base_path = "data/manuales"
-
-    if not os.path.exists(base_path):
-        return manuales
-
-    for archivo in os.listdir(base_path):
-        if archivo.endswith(".json"):
-            ruta = os.path.join(base_path, archivo)
-            with open(ruta, "r", encoding="utf-8") as f:
-                manuales.append(json.load(f))
-
-    return manuales
-
-
-MANUALES = cargar_manuales()
+MANUALES_DISPONIBLES = {
+    "piscina": {
+        "titulo": "Manejo de la piscina",
+        "archivo": "/static/manuales/piscina.pdf",
+        "keywords": [
+            "manual de la piscina",
+            "manejo de la piscina",
+            "mantenimiento de la piscina",
+            "como limpiar la piscina",
+            "manual piscina",
+            "instrucciones piscina"
+        ]
+    }
+}
 
 # =====================================================
 # HELPERS MANUALES
@@ -56,22 +54,27 @@ def es_pedido_lista_manuales(texto: str) -> bool:
     triggers = [
         "que manuales",
         "manuales disponibles",
-        "que documentacion",
         "tenes manuales",
-        "manuales internos"
+        "documentacion",
+        "manual interno"
     ]
     return any(t in texto for t in triggers)
 
-
-def detectar_manual(texto: str):
+def buscar_manual(texto: str):
     texto = texto.lower()
-
-    for manual in MANUALES:
-        for trigger in manual.get("disparadores", []):
-            if trigger in texto:
+    for manual in MANUALES_DISPONIBLES.values():
+        for kw in manual["keywords"]:
+            if kw in texto:
                 return manual
-
     return None
+
+def existe_archivo_static(ruta_publica: str) -> bool:
+    """
+    Verifica que el archivo exista físicamente en /static
+    """
+    ruta = ruta_publica.replace("/static/", "")
+    ruta_fisica = os.path.join(app.root_path, "static", ruta)
+    return os.path.exists(ruta_fisica)
 
 # =====================================================
 # CARGA DE SYSTEM + CONOCIMIENTO
@@ -83,7 +86,6 @@ def cargar_system_prompt():
         with open(ruta, "r", encoding="utf-8") as f:
             return f.read().strip()
     return "Sos AlmostMe, el clon digital conversacional de Juan."
-
 
 def cargar_conocimiento():
     base_path = "data/conocimiento"
@@ -107,7 +109,6 @@ def cargar_conocimiento():
 
     return texto.strip()
 
-
 SYSTEM_PROMPT = cargar_system_prompt()
 CONOCIMIENTO = cargar_conocimiento()
 
@@ -122,13 +123,13 @@ CONOCIMIENTO BASE DEFINIDO
 """.strip()
 
 # =====================================================
-# MODELO (GITHUB MODELS / AZURE)
+# MODELO (GITHUB MODELS / LLAMA)
 # =====================================================
 
 def consultar_github(historial):
     token = os.getenv("GITHUB_TOKEN")
     if not token:
-        return "⚠️ Error de configuración."
+        return "Error de configuración."
 
     endpoint = "https://models.inference.ai.azure.com"
 
@@ -161,7 +162,7 @@ def consultar_github(historial):
 
     except Exception as e:
         print(f"❌ ERROR MODELO: {e}")
-        return "⚠️ Error en la comunicación."
+        return "Error en la comunicación."
 
 # =====================================================
 # RUTAS
@@ -173,12 +174,10 @@ def index():
     session.setdefault("historial", [])
     return render_template("index.html")
 
-
 @app.route("/chat", methods=["POST"])
 def chat():
     try:
         data = request.get_json(force=True, silent=True)
-
         if not data or "message" not in data:
             return jsonify({"response": "Mensaje inválido."}), 400
 
@@ -192,11 +191,11 @@ def chat():
         # 1) LISTADO DE MANUALES
         # =================================================
         if es_pedido_lista_manuales(user_input):
-            if not MANUALES:
+            if not MANUALES_DISPONIBLES:
                 return jsonify({"response": "No tengo manuales internos disponibles."})
 
-            respuesta = "Tengo disponibles los siguientes manuales internos:\n"
-            for m in MANUALES:
+            respuesta = "Tengo disponible el siguiente manual interno:\n"
+            for m in MANUALES_DISPONIBLES.values():
                 respuesta += f"- {m['titulo']}\n"
 
             return jsonify({"response": respuesta.strip()})
@@ -204,28 +203,22 @@ def chat():
         # =================================================
         # 2) MANUAL ESPECÍFICO
         # =================================================
-        manual = detectar_manual(user_input)
+        manual = buscar_manual(user_input)
         if manual:
-            ruta_fisica = os.path.join(
-                app.root_path,
-                "data",
-                manual["link"].lstrip("/")
-            )
-
-            if not os.path.exists(ruta_fisica):
+            if not existe_archivo_static(manual["archivo"]):
                 return jsonify({
                     "response": "No tengo un manual interno disponible sobre ese tema."
                 })
 
-            respuesta = (
-                f"{manual['respuesta']}\n"
-                f"{manual['link']}"
-            )
-
-            return jsonify({"response": respuesta})
+            return jsonify({
+                "response": (
+                    f"Tengo un manual interno sobre el manejo de la piscina.\n"
+                    f"{manual['archivo']}"
+                )
+            })
 
         # =================================================
-        # 3) MODELO
+        # 3) RESTO → MODELO
         # =================================================
         session["historial"].append({
             "role": "user",
@@ -246,23 +239,7 @@ def chat():
 
     except Exception as e:
         print(f"❌ ERROR /chat: {e}")
-        return jsonify({"response": "⚠️ Error interno del servidor."}), 500
-
-# =====================================================
-# SERVIR PDF DE MANUALES
-# =====================================================
-
-@app.route("/manuales/<path:filename>")
-def manuales(filename):
-    carpeta = os.path.join(app.root_path, "data", "manuales")
-
-    if ".." in filename or filename.startswith("/"):
-        abort(403)
-
-    if not os.path.exists(os.path.join(carpeta, filename)):
-        abort(404)
-
-    return send_from_directory(carpeta, filename, as_attachment=False)
+        return jsonify({"response": "Error interno del servidor."}), 500
 
 # =====================================================
 # RUN
