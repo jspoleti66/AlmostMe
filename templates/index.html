@@ -27,9 +27,6 @@
       overflow: hidden;
     }
 
-    /* ======================
-       VIDEO BURBUJA
-       ====================== */
     .video-bubble {
       position: absolute;
       top: 12px;
@@ -43,12 +40,6 @@
       background: black;
       z-index: 10;
       box-shadow: 0 8px 20px rgba(0,0,0,0.6);
-      transition: box-shadow 0.3s, border-color 0.3s;
-    }
-
-    .video-bubble.thinking {
-      border-color: #38bdf8;
-      box-shadow: 0 0 25px rgba(56,189,248,0.8);
     }
 
     .video-bubble video {
@@ -57,9 +48,6 @@
       object-fit: cover;
     }
 
-    /* ======================
-       CHAT
-       ====================== */
     #chat {
       flex: 1;
       padding: 140px 12px 12px;
@@ -75,60 +63,54 @@
       border-radius: 12px;
       font-size: 14px;
       line-height: 1.4;
-      word-wrap: break-word;
     }
 
     .user {
       align-self: flex-end;
       background: #2563eb;
       color: white;
-      border-bottom-right-radius: 4px;
     }
 
     .bot {
       align-self: flex-start;
       background: #1e293b;
       color: #e5e7eb;
-      border-bottom-left-radius: 4px;
     }
 
-    .bot a {
-      color: #38bdf8;
-      text-decoration: underline;
-    }
+    /* ===== MANUAL CARD ===== */
 
-    /* ======================
-       TYPING INDICATOR
-       ====================== */
-    .typing {
+    .manual-card {
+      background: #020617;
+      border: 1px solid #1e293b;
+      border-radius: 14px;
+      padding: 14px;
       display: flex;
-      gap: 4px;
+      flex-direction: column;
+      gap: 10px;
+      max-width: 85%;
+    }
+
+    .manual-title {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .manual-link {
+      display: inline-flex;
+      gap: 6px;
+      background: #2563eb;
+      color: white;
       padding: 8px 12px;
-      background: #1e293b;
-      border-radius: 12px;
+      border-radius: 10px;
+      text-decoration: none;
+      font-size: 13px;
       width: fit-content;
     }
 
-    .typing span {
-      width: 6px;
-      height: 6px;
-      background: #94a3b8;
-      border-radius: 50%;
-      animation: blink 1.4s infinite both;
+    .manual-link:hover {
+      background: #1d4ed8;
     }
 
-    .typing span:nth-child(2) { animation-delay: 0.2s; }
-    .typing span:nth-child(3) { animation-delay: 0.4s; }
-
-    @keyframes blink {
-      0% { opacity: 0.2; }
-      20% { opacity: 1; }
-      100% { opacity: 0.2; }
-    }
-
-    /* ======================
-       INPUT
-       ====================== */
     #input-container {
       display: flex;
       gap: 8px;
@@ -144,11 +126,6 @@
       border: 1px solid #334155;
       background: #020617;
       color: white;
-      outline: none;
-    }
-
-    input::placeholder {
-      color: #94a3b8;
     }
 
     button {
@@ -157,74 +134,39 @@
       border: none;
       background: #2563eb;
       color: white;
-      cursor: pointer;
-    }
-
-    button:hover {
-      background: #1d4ed8;
-    }
-
-    /* ======================
-       MOBILE
-       ====================== */
-    @media (max-width: 768px) {
-      body { align-items: stretch; }
-      .container { width: 100%; height: 100vh; border-radius: 0; }
-      .video-bubble { width: 88px; height: 88px; top: 10px; }
-      #chat { padding: 120px 14px 14px; }
     }
   </style>
 </head>
 
 <body>
-
   <div class="container">
 
-    <!-- VIDEO DEL CLON -->
-    <div class="video-bubble" id="videoBubble">
+    <div class="video-bubble">
       <video autoplay muted loop playsinline>
         <source src="/static/clone.mp4" type="video/mp4">
       </video>
     </div>
 
-    <!-- CHAT -->
     <div id="chat">
       <div class="bot">Hola, soy AlmostMe. ¿En qué puedo ayudarte?</div>
     </div>
 
-    <!-- INPUT -->
     <div id="input-container">
-      <input
-        type="text"
-        id="user-input"
-        placeholder="Escribí tu mensaje..."
-        onkeydown="if(event.key==='Enter') enviar()"
-      />
+      <input id="user-input" placeholder="Escribí tu mensaje..."
+             onkeydown="if(event.key==='Enter') enviar()" />
       <button onclick="enviar()">Enviar</button>
     </div>
 
   </div>
 
   <script>
-    let typingEl = null;
-
-    function renderRespuesta(texto) {
-      const linkRegex = /(\/manuales\/[^\s]+)/g;
-      return texto.replace(
-        linkRegex,
-        '<a href="$1" target="_blank" rel="noopener noreferrer">📄 Ver manual</a>'
-      );
-    }
-
     async function enviar() {
       const input = document.getElementById("user-input");
       const mensaje = input.value.trim();
       if (!mensaje) return;
 
-      agregarMensaje(mensaje, "user");
+      agregarTexto(mensaje, "user");
       input.value = "";
-
-      mostrarTyping();
 
       const res = await fetch("/chat", {
         method: "POST",
@@ -234,48 +176,37 @@
 
       const data = await res.json();
 
-      ocultarTyping();
-      agregarMensaje(data.response, "bot");
+      if (data.type === "manual") {
+        agregarManual(data);
+      } else {
+        agregarTexto(data.response, "bot");
+      }
     }
 
-    function agregarMensaje(texto, clase) {
+    function agregarTexto(texto, clase) {
       const chat = document.getElementById("chat");
       const msg = document.createElement("div");
       msg.className = clase;
-
-      if (clase === "bot") {
-        msg.innerHTML = renderRespuesta(texto);
-      } else {
-        msg.innerText = texto;
-      }
-
+      msg.innerText = texto;
       chat.appendChild(msg);
       chat.scrollTop = chat.scrollHeight;
     }
 
-    function mostrarTyping() {
+    function agregarManual(data) {
       const chat = document.getElementById("chat");
-      const bubble = document.getElementById("videoBubble");
+      const card = document.createElement("div");
+      card.className = "manual-card bot";
 
-      bubble.classList.add("thinking");
+      card.innerHTML = `
+        <div class="manual-title">📘 ${data.title}</div>
+        <a class="manual-link" href="${data.url}" target="_blank">
+          📄 Ver manual
+        </a>
+      `;
 
-      typingEl = document.createElement("div");
-      typingEl.className = "typing bot";
-      typingEl.innerHTML = "<span></span><span></span><span></span>";
-      chat.appendChild(typingEl);
+      chat.appendChild(card);
       chat.scrollTop = chat.scrollHeight;
     }
-
-    function ocultarTyping() {
-      const bubble = document.getElementById("videoBubble");
-      bubble.classList.remove("thinking");
-
-      if (typingEl) {
-        typingEl.remove();
-        typingEl = null;
-      }
-    }
   </script>
-
 </body>
 </html>
