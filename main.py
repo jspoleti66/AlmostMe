@@ -77,16 +77,29 @@ def cargar_system_prompt():
             return f.read().strip()
     return "Sos AlmostMe, el clon digital conversacional de Juan."
 
+import json
+
 def cargar_conocimiento():
     base_path = "data/conocimiento"
-    bloques = []
-    if os.path.exists(base_path):
-        for archivo in sorted(os.listdir(base_path)):
-            ruta = os.path.join(base_path, archivo)
-            if os.path.isfile(ruta):
-                with open(ruta, "r", encoding="utf-8") as f:
-                    bloques.append(f"[{archivo}]\n{f.read().strip()}")
-    return "\n\n".join(bloques)
+    texto = ""
+
+    if not os.path.exists(base_path):
+        return texto
+
+    for archivo in sorted(os.listdir(base_path)):
+        ruta = os.path.join(base_path, archivo)
+
+        if archivo.endswith(".json"):
+            with open(ruta, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                texto += f"\n### {archivo}\n"
+                texto += json.dumps(data, ensure_ascii=False, indent=2)
+
+        elif archivo.endswith(".txt"):
+            with open(ruta, "r", encoding="utf-8") as f:
+                texto += f"\n### {archivo}\n{f.read().strip()}\n"
+
+    return texto.strip()
 
 SYSTEM_PROMPT = cargar_system_prompt()
 CONOCIMIENTO = cargar_conocimiento()
@@ -251,4 +264,5 @@ def manuales(filename):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
+
 
