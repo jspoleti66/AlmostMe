@@ -128,14 +128,20 @@ def chat():
     user_input = data.get("message", "").strip()
 
     if not user_input:
-        return jsonify({ "type": "text", "response": "Decime algo para comenzar." })
+        return jsonify({
+            "type": "text",
+            "response": "Decime algo para comenzar."
+        })
+
+    texto = user_input.lower()
 
     # =================================================
-    # MANUALES → SOLO BACKEND (NUNCA MODELO)
+    # 1) TODO LO RELACIONADO A MANUALES SE RESUELVE ACÁ
     # =================================================
 
-    if es_pedido_manual(user_input):
-        manual = buscar_manual(user_input)
+    if any(p in texto for p in ["manual", "manuales", "guia", "documentacion", "instrucciones", "piscina", "jardineria"]):
+
+        manual = buscar_manual(texto)
 
         if manual and existe_archivo_static(manual["archivo"]):
             return jsonify({
@@ -144,15 +150,17 @@ def chat():
                 "url": manual["archivo"]
             })
 
+        # 🔒 RESPUESTA FIJA – NO MODELO
         return jsonify({
             "type": "text",
             "response": "No tengo un manual interno sobre ese tema."
         })
 
     # =================================================
-    # RESTO → MODELO
+    # 2) RESTO → MODELO
     # =================================================
 
+    session.setdefault("historial", [])
     session["historial"].append({
         "role": "user",
         "content": user_input
@@ -180,3 +188,4 @@ def chat():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
+
