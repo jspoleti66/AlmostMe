@@ -9,14 +9,11 @@ from datetime import timedelta
 # =====================================================
 
 app = Flask(__name__)
-
 app.secret_key = os.getenv("SECRET_KEY", "almostme_secret_2026")
 app.permanent_session_lifetime = timedelta(minutes=30)
 
 # =====================================================
 # CARGA DE MANUALES
-# Fuente única: data/manuales/*.json
-# PDFs: /static/manuales/<id>.pdf
 # =====================================================
 
 def cargar_manuales():
@@ -27,19 +24,16 @@ def cargar_manuales():
         return manuales
 
     for archivo in os.listdir(base_path):
-        if not archivo.endswith(".json"):
-            continue
-
-        with open(os.path.join(base_path, archivo), encoding="utf-8") as f:
-            data = json.load(f)
-
-            manuales.append({
-                "id": data["id"],
-                "titulo": data["titulo"],
-                "descripcion": data.get("descripcion", ""),
-                "disparadores": data.get("disparadores", []),
-                "link": f"/static/manuales/{data['id']}.pdf"
-            })
+        if archivo.endswith(".json"):
+            with open(os.path.join(base_path, archivo), encoding="utf-8") as f:
+                data = json.load(f)
+                manuales.append({
+                    "id": data["id"],
+                    "titulo": data["titulo"],
+                    "descripcion": data.get("descripcion", ""),
+                    "disparadores": data.get("disparadores", []),
+                    "link": f"/static/manuales/{data['id']}.pdf"
+                })
 
     return manuales
 
@@ -50,20 +44,15 @@ MANUALES = cargar_manuales()
 # HELPERS MANUALES
 # =====================================================
 
-def buscar_manuales(texto: str):
+def buscar_manuales(texto):
     texto = texto.lower()
-    encontrados = []
-
-    for manual in MANUALES:
-        for d in manual.get("disparadores", []):
-            if d in texto:
-                encontrados.append(manual)
-                break
-
-    return encontrados
+    return [
+        m for m in MANUALES
+        if any(d in texto for d in m.get("disparadores", []))
+    ]
 
 
-def es_pedido_lista(texto: str) -> bool:
+def es_pedido_lista(texto):
     texto = texto.lower()
     return any(t in texto for t in [
         "manuales",
@@ -76,17 +65,31 @@ def es_pedido_lista(texto: str) -> bool:
     ])
 
 
-def es_pedido_otro(texto: str) -> bool:
+def es_pedido_otro(texto):
     return texto.lower().strip() in [
         "otro",
+        "y otro",
         "algún otro",
         "algun otro",
-        "algún otro manual",
         "otro manual",
+        "y que otro",
         "hay otro",
         "hay alguno más",
         "hay alguno mas"
     ]
+
+
+def es_salida_modo_manual(texto):
+    texto = texto.lower()
+    return any(t in texto for t in [
+        "como",
+        "qué es",
+        "que es",
+        "explicame",
+        "explica",
+        "ayuda",
+        "mantenimiento"
+    ])
 
 # =====================================================
 # SYSTEM + CONOCIMIENTO
@@ -129,14 +132,8 @@ def consultar_modelo(system_prompt, conocimiento, historial, mensaje_usuario):
     url = "https://models.inference.ai.azure.com/chat/completions"
 
     messages = [
-        {
-            "role": "system",
-            "content": system_prompt
-        },
-        {
-            "role": "system",
-            "content": f"CONOCIMIENTO DISPONIBLE:\n\n{conocimiento}"
-        }
+        {"role": "system", "content": system_prompt},
+        {"role": "system", "content": f"CONOCIMIENTO DISPONIBLE:\n\n{conocimiento}"}
     ]
 
     messages.extend(historial)
@@ -169,32 +166,34 @@ def index():
     session.permanent = True
     session.setdefault("historial", [])
     session.setdefault("manuales_mostrados", [])
+    session.setdefault("modo", None)
     return render_template("index.html")
 
 
 @app.route("/chat", methods=["POST"])
 def chat():
     data = request.get_json(silent=True)
-    if not data or "message" not in data:
-        return jsonify({"type": "text", "text": "Mensaje inválido."})
+    mensaje = data.get("message", "").strip()
 
-    mensaje = data["message"].strip()
     if not mensaje:
         return jsonify({"type": "text", "text": "Decime algo para comenzar."})
 
-    # 1️⃣ LISTA DE MANUALES
+    # ============================
+    # MODO MANUALES
+    # ============================
+
     if es_pedido_lista(mensaje):
+        session["modo"] = "manuales"
         session["manuales_mostrados"] = MANUALES
         return jsonify({"type": "manual_list", "manuales": MANUALES})
 
-    # 2️⃣ BUSCAR MANUAL
     encontrados = buscar_manuales(mensaje)
     if encontrados:
+        session["modo"] = "manuales"
         session["manuales_mostrados"] = encontrados
         return jsonify({"type": "manual_list", "manuales": encontrados})
 
-    # 3️⃣ PEDIDO DE “OTRO”
-    if es_pedido_otro(mensaje):
+    if session.get("modo") == "manuales" and es_pedido_otro(mensaje):
         ya = session.get("manuales_mostrados", [])
         restantes = [m for m in MANUALES if m not in ya]
 
@@ -204,21 +203,22 @@ def chat():
 
         return jsonify({"type": "text", "text": "No hay otros manuales disponibles."})
 
-    # 4️⃣ CONVERSACIÓN GENERAL
-    historial = session.get("historial", [])
+    if session.get("modo") == "manuales" and es_salida_modo_manual(mensaje):
+        session["modo"] = None
 
-    respuesta = consultar_modelo(
-        SYSTEM_PROMPT,
-        CONOCIMIENTO,
-        historial,
-        mensaje
-    )
+    # ============================
+    # CONVERSACIÓN GENERAL
+    # ============================
+
+    historial = session.get("historial", [])
+    respuesta = consultar_modelo(SYSTEM_PROMPT, CONOCIMIENTO, historial, mensaje)
 
     historial.append({"role": "user", "content": mensaje})
     historial.append({"role": "assistant", "content": respuesta})
     session["historial"] = historial[-12:]
 
     return jsonify({"type": "text", "text": respuesta})
+
 
 # =====================================================
 # RUN
