@@ -33,7 +33,7 @@ SYSTEM_PROMPT = cargar_system_prompt()
 MANUALES_JSON = cargar_conocimiento_json()
 
 # =====================================================
-# MODELO (GitHub / Azure)
+# MODELO (GitHub Models – RESTAURADO)
 # =====================================================
 
 def consultar_modelo(system_prompt, manuales_json, historial, mensaje_usuario):
@@ -51,11 +51,8 @@ def consultar_modelo(system_prompt, manuales_json, historial, mensaje_usuario):
         {
             "role": "system",
             "content": (
-                "Tenés acceso a un conocimiento estructurado en formato JSON "
-                "que describe manuales disponibles.\n\n"
-                "Usalo para responder pedidos sobre manuales, enlaces, "
-                "consultas generales y navegación natural.\n\n"
-                "MANUALES_JSON:\n"
+                "Tenés acceso a conocimiento estructurado en formato JSON "
+                "sobre manuales disponibles. Usalo cuando corresponda.\n\n"
                 f"{manuales_json}"
             )
         }
@@ -65,6 +62,7 @@ def consultar_modelo(system_prompt, manuales_json, historial, mensaje_usuario):
     messages.append({"role": "user", "content": mensaje_usuario})
 
     payload = {
+        # 🔥 MODELO ORIGINAL RESTAURADO
         "model": "gpt-4o-mini",
         "messages": messages,
         "temperature": 0.2
@@ -79,7 +77,8 @@ def consultar_modelo(system_prompt, manuales_json, historial, mensaje_usuario):
         r = requests.post(url, headers=headers, json=payload, timeout=30)
         r.raise_for_status()
         return r.json()["choices"][0]["message"]["content"].strip()
-    except Exception:
+    except Exception as e:
+        print("ERROR MODELO:", e)
         return "No pude responder en este momento."
 
 # =====================================================
