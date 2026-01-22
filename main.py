@@ -16,7 +16,7 @@ app.secret_key = os.getenv("SECRET_KEY", "almostme_secret")
 app.permanent_session_lifetime = timedelta(minutes=30)
 
 # =====================================================
-# CARGA DE CONOCIMIENTO
+# CARGA DE ARCHIVOS
 # =====================================================
 
 def cargar_archivo(path):
@@ -25,14 +25,46 @@ def cargar_archivo(path):
     with open(path, encoding="utf-8") as f:
         return f.read().strip()
 
-def cargar_json(path):
-    if not os.path.exists(path):
-        return {}
-    with open(path, encoding="utf-8") as f:
-        return json.load(f)
+def cargar_conocimiento_completo(base_path="data/conocimiento"):
+    if not os.path.exists(base_path):
+        return ""
+
+    bloques = []
+
+    for archivo in sorted(os.listdir(base_path)):
+        ruta = os.path.join(base_path, archivo)
+
+        if archivo.endswith(".txt"):
+            with open(ruta, encoding="utf-8") as f:
+                contenido = f.read().strip()
+                if contenido:
+                    bloques.append(f"### {archivo}\n{contenido}")
+
+        elif archivo.endswith(".json"):
+            with open(ruta, encoding="utf-8") as f:
+                data = json.load(f)
+                bloques.append(
+                    f"### {archivo}\n{json.dumps(data, ensure_ascii=False, indent=2)}"
+                )
+
+    return "\n\n".join(bloques)
+
+# =====================================================
+# CONTEXTO BASE
+# =====================================================
 
 SYSTEM_PROMPT = cargar_archivo("data/prompts/system.txt")
-MANUALES_JSON = cargar_json("data/conocimiento/manuales.json")
+CONOCIMIENTO_COMPLETO = cargar_conocimiento_completo()
+
+CONTEXTO_BASE = f"""
+{SYSTEM_PROMPT}
+
+────────────────────────────────────────
+CONOCIMIENTO BASE DISPONIBLE
+────────────────────────────────────────
+
+{CONOCIMIENTO_COMPLETO}
+""".strip()
 
 # =====================================================
 # GITHUB MODELS (Azure AI Inference)
@@ -48,21 +80,9 @@ def consultar_modelo(historial, mensaje_usuario):
         credential=AzureKeyCredential(token),
     )
 
-    mensajes = []
-
-    if SYSTEM_PROMPT:
-        mensajes.append(SystemMessage(content=SYSTEM_PROMPT))
-
-    if MANUALES_JSON:
-        mensajes.append(
-            SystemMessage(
-                content=(
-                    "Disponés del siguiente conocimiento estructurado en JSON "
-                    "sobre manuales. Usalo SOLO si es relevante.\n\n"
-                    + json.dumps(MANUALES_JSON, ensure_ascii=False)
-                )
-            )
-        )
+    mensajes = [
+        SystemMessage(content=CONTEXTO_BASE)
+    ]
 
     for msg in historial[-6:]:
         if msg["role"] == "user":
