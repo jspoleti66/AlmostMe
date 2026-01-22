@@ -81,17 +81,6 @@ def es_pedido_otro(texto):
         "hay alguno mas"
     ]
 
-
-def es_salida_manual(texto):
-    return texto.lower().strip() in [
-        "ok",
-        "gracias",
-        "listo",
-        "perfecto",
-        "cambiemos de tema",
-        "otra cosa"
-    ]
-
 # =====================================================
 # SYSTEM + CONOCIMIENTO
 # =====================================================
@@ -195,7 +184,7 @@ def chat():
         return jsonify({"type": "manual_list", "manuales": encontrados})
 
     # ============================
-    # MODO MANUALES (BACKEND PURO)
+    # MODO MANUALES (SIN TEXTO FORZADO)
     # ============================
 
     if session.get("modo") == MODO_MANUALES:
@@ -213,18 +202,9 @@ def chat():
                 "text": "No hay otros manuales disponibles."
             })
 
-        if es_salida_manual(mensaje):
-            session["modo"] = MODO_GENERAL
-            return jsonify({
-                "type": "text",
-                "text": "Perfecto. ¿En qué más te puedo ayudar?"
-            })
-
-        # 🔒 BLOQUEO TOTAL AL MODELO
-        return jsonify({
-            "type": "text",
-            "text": "Si querés otro manual decime “otro”, o decime “ok” para seguir con otra cosa."
-        })
+        # 👇 cualquier otro mensaje sale naturalmente del modo manuales
+        session["modo"] = MODO_GENERAL
+        # continúa al flujo general (sin responder acá)
 
     # ============================
     # CONVERSACIÓN GENERAL
