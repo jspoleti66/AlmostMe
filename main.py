@@ -1,82 +1,78 @@
 import os
 import json
-import requests
 from flask import Flask, request, jsonify, render_template, session
 from datetime import timedelta
+from github import GithubModels  # SDK GitHub Models
 
 # =====================================================
 # APP
 # =====================================================
 
 app = Flask(__name__)
-app.secret_key = os.getenv("SECRET_KEY", "almostme_secret_2026")
+app.secret_key = os.getenv("SECRET_KEY", "almostme_secret")
 app.permanent_session_lifetime = timedelta(minutes=30)
 
 # =====================================================
 # CARGA DE CONOCIMIENTO
 # =====================================================
 
-def cargar_system_prompt():
-    ruta = "data/prompts/system.txt"
-    return open(ruta, encoding="utf-8").read() if os.path.exists(ruta) else ""
-
-
-def cargar_conocimiento_json():
-    ruta = "data/conocimiento/manuales.json"
-    if not os.path.exists(ruta):
+def cargar_archivo(path):
+    if not os.path.exists(path):
         return ""
-    with open(ruta, encoding="utf-8") as f:
-        return json.dumps(json.load(f), ensure_ascii=False, indent=2)
+    with open(path, encoding="utf-8") as f:
+        return f.read()
 
+def cargar_json(path):
+    if not os.path.exists(path):
+        return {}
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)
 
-SYSTEM_PROMPT = cargar_system_prompt()
-MANUALES_JSON = cargar_conocimiento_json()
+SYSTEM_PROMPT = cargar_archivo("data/prompts/system.txt")
+MANUALES_JSON = cargar_json("data/conocimiento/manuales.json")
 
 # =====================================================
-# MODELO (GitHub Models – RESTAURADO)
+# GITHUB MODELS – CLIENTE REAL
 # =====================================================
 
-def consultar_modelo(system_prompt, manuales_json, historial, mensaje_usuario):
-    api_key = os.getenv("GITHUB_TOKEN")
-    if not api_key:
-        return "No tengo acceso al modelo en este momento."
+client = GithubModels(
+    token=os.getenv("GITHUB_TOKEN")
+)
 
-    url = "https://models.inference.ai.azure.com/chat/completions"
+def consultar_modelo(historial, mensaje_usuario):
+    mensajes = []
 
-    messages = [
-        {
+    if SYSTEM_PROMPT:
+        mensajes.append({
             "role": "system",
-            "content": system_prompt
-        },
-        {
+            "content": SYSTEM_PROMPT
+        })
+
+    if MANUALES_JSON:
+        mensajes.append({
             "role": "system",
             "content": (
-                "Tenés acceso a conocimiento estructurado en formato JSON "
-                "sobre manuales disponibles. Usalo cuando corresponda.\n\n"
-                f"{manuales_json}"
+                "Disponés del siguiente conocimiento estructurado en JSON "
+                "sobre manuales. Usalo SOLO si es relevante.\n\n"
+                + json.dumps(MANUALES_JSON, ensure_ascii=False)
             )
-        }
-    ]
+        })
 
-    messages.extend(historial)
-    messages.append({"role": "user", "content": mensaje_usuario})
-
-    payload = {
-        # 🔥 MODELO ORIGINAL RESTAURADO
-        "model": "gpt-4o-mini",
-        "messages": messages,
-        "temperature": 0.2
-    }
-
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json"
-    }
+    mensajes.extend(historial)
+    mensajes.append({
+        "role": "user",
+        "content": mensaje_usuario
+    })
 
     try:
-        r = requests.post(url, headers=headers, json=payload, timeout=30)
-        r.raise_for_status()
-        return r.json()["choices"][0]["message"]["content"].strip()
+        response = client.complete(
+            model="Meta-Llama-3.1-8B-Instruct",
+            messages=mensajes,
+            temperature=0.2,
+            max_tokens=384,
+            top_p=0.1
+        )
+        return response.choices[0].message.content.strip()
     except Exception as e:
         print("ERROR MODELO:", e)
         return "No pude responder en este momento."
@@ -91,23 +87,17 @@ def index():
     session.setdefault("historial", [])
     return render_template("index.html")
 
-
 @app.route("/chat", methods=["POST"])
 def chat():
     data = request.get_json(silent=True)
     mensaje = data.get("message", "").strip()
 
     if not mensaje:
-        return jsonify({"type": "text", "text": "Decime algo para comenzar."})
+        return jsonify({"type": "text", "text": "Decime algo para empezar."})
 
     historial = session.get("historial", [])
 
-    respuesta = consultar_modelo(
-        SYSTEM_PROMPT,
-        MANUALES_JSON,
-        historial,
-        mensaje
-    )
+    respuesta = consultar_modelo(historial, mensaje)
 
     historial.append({"role": "user", "content": mensaje})
     historial.append({"role": "assistant", "content": respuesta})
