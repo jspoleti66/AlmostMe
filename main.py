@@ -12,77 +12,8 @@ app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "almostme_secret_2026")
 app.permanent_session_lifetime = timedelta(minutes=30)
 
-MODO_GENERAL = "general"
-MODO_MANUALES = "manuales"
-
 # =====================================================
-# CARGA DE MANUALES
-# =====================================================
-
-def cargar_manuales():
-    base_path = "data/manuales"
-    manuales = []
-
-    if not os.path.exists(base_path):
-        return manuales
-
-    for archivo in os.listdir(base_path):
-        if archivo.endswith(".json"):
-            with open(os.path.join(base_path, archivo), encoding="utf-8") as f:
-                data = json.load(f)
-                manuales.append({
-                    "id": data["id"],
-                    "titulo": data["titulo"],
-                    "descripcion": data.get("descripcion", ""),
-                    "disparadores": data.get("disparadores", []),
-                    "link": f"/static/manuales/{data['id']}.pdf"
-                })
-
-    return manuales
-
-
-MANUALES = cargar_manuales()
-
-# =====================================================
-# HELPERS MANUALES
-# =====================================================
-
-def buscar_manuales(texto):
-    texto = texto.lower()
-    return [
-        m for m in MANUALES
-        if any(d in texto for d in m.get("disparadores", []))
-    ]
-
-
-def es_pedido_lista(texto):
-    texto = texto.lower()
-    return any(t in texto for t in [
-        "manuales",
-        "qué manuales",
-        "que manuales",
-        "lista de manuales",
-        "tenes manuales",
-        "documentacion",
-        "documentación"
-    ])
-
-
-def es_pedido_otro(texto):
-    return texto.lower().strip() in [
-        "otro",
-        "y otro",
-        "y que otro",
-        "algún otro",
-        "algun otro",
-        "otro manual",
-        "hay otro",
-        "hay alguno más",
-        "hay alguno mas"
-    ]
-
-# =====================================================
-# SYSTEM + CONOCIMIENTO
+# CARGA DE CONOCIMIENTO
 # =====================================================
 
 def cargar_system_prompt():
@@ -90,31 +21,22 @@ def cargar_system_prompt():
     return open(ruta, encoding="utf-8").read() if os.path.exists(ruta) else ""
 
 
-def cargar_conocimiento():
-    base_path = "data/conocimiento"
-    bloques = []
-
-    if not os.path.exists(base_path):
+def cargar_conocimiento_json():
+    ruta = "data/conocimiento/manuales.json"
+    if not os.path.exists(ruta):
         return ""
-
-    for archivo in sorted(os.listdir(base_path)):
-        if archivo.endswith(".txt"):
-            with open(os.path.join(base_path, archivo), encoding="utf-8") as f:
-                contenido = f.read().strip()
-                if contenido:
-                    bloques.append(f"### {archivo}\n{contenido}")
-
-    return "\n\n".join(bloques)
+    with open(ruta, encoding="utf-8") as f:
+        return json.dumps(json.load(f), ensure_ascii=False, indent=2)
 
 
 SYSTEM_PROMPT = cargar_system_prompt()
-CONOCIMIENTO = cargar_conocimiento()
+MANUALES_JSON = cargar_conocimiento_json()
 
 # =====================================================
-# MODELO (GitHub)
+# MODELO (GitHub / Azure)
 # =====================================================
 
-def consultar_modelo(system_prompt, conocimiento, historial, mensaje_usuario):
+def consultar_modelo(system_prompt, manuales_json, historial, mensaje_usuario):
     api_key = os.getenv("GITHUB_TOKEN")
     if not api_key:
         return "No tengo acceso al modelo en este momento."
@@ -122,8 +44,21 @@ def consultar_modelo(system_prompt, conocimiento, historial, mensaje_usuario):
     url = "https://models.inference.ai.azure.com/chat/completions"
 
     messages = [
-        {"role": "system", "content": system_prompt},
-        {"role": "system", "content": f"CONOCIMIENTO DISPONIBLE:\n\n{conocimiento}"}
+        {
+            "role": "system",
+            "content": system_prompt
+        },
+        {
+            "role": "system",
+            "content": (
+                "Tenés acceso a un conocimiento estructurado en formato JSON "
+                "que describe manuales disponibles.\n\n"
+                "Usalo para responder pedidos sobre manuales, enlaces, "
+                "consultas generales y navegación natural.\n\n"
+                "MANUALES_JSON:\n"
+                f"{manuales_json}"
+            )
+        }
     ]
 
     messages.extend(historial)
@@ -155,8 +90,6 @@ def consultar_modelo(system_prompt, conocimiento, historial, mensaje_usuario):
 def index():
     session.permanent = True
     session.setdefault("historial", [])
-    session.setdefault("manuales_mostrados", [])
-    session.setdefault("modo", MODO_GENERAL)
     return render_template("index.html")
 
 
@@ -168,50 +101,14 @@ def chat():
     if not mensaje:
         return jsonify({"type": "text", "text": "Decime algo para comenzar."})
 
-    # ============================
-    # ENTRADA A MANUALES
-    # ============================
-
-    if es_pedido_lista(mensaje):
-        session["modo"] = MODO_MANUALES
-        session["manuales_mostrados"] = MANUALES
-        return jsonify({"type": "manual_list", "manuales": MANUALES})
-
-    encontrados = buscar_manuales(mensaje)
-    if encontrados:
-        session["modo"] = MODO_MANUALES
-        session["manuales_mostrados"] = encontrados
-        return jsonify({"type": "manual_list", "manuales": encontrados})
-
-    # ============================
-    # MODO MANUALES (SIN TEXTO FORZADO)
-    # ============================
-
-    if session.get("modo") == MODO_MANUALES:
-
-        if es_pedido_otro(mensaje):
-            ya = session.get("manuales_mostrados", [])
-            restantes = [m for m in MANUALES if m not in ya]
-
-            if restantes:
-                session["manuales_mostrados"] = restantes
-                return jsonify({"type": "manual_list", "manuales": restantes})
-
-            return jsonify({
-                "type": "text",
-                "text": "No hay otros manuales disponibles."
-            })
-
-        # 👇 cualquier otro mensaje sale naturalmente del modo manuales
-        session["modo"] = MODO_GENERAL
-        # continúa al flujo general (sin responder acá)
-
-    # ============================
-    # CONVERSACIÓN GENERAL
-    # ============================
-
     historial = session.get("historial", [])
-    respuesta = consultar_modelo(SYSTEM_PROMPT, CONOCIMIENTO, historial, mensaje)
+
+    respuesta = consultar_modelo(
+        SYSTEM_PROMPT,
+        MANUALES_JSON,
+        historial,
+        mensaje
+    )
 
     historial.append({"role": "user", "content": mensaje})
     historial.append({"role": "assistant", "content": respuesta})
