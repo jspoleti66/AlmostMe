@@ -12,6 +12,9 @@ app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "almostme_secret_2026")
 app.permanent_session_lifetime = timedelta(minutes=30)
 
+MODO_GENERAL = "general"
+MODO_MANUALES = "manuales"
+
 # =====================================================
 # CARGA DE MANUALES
 # =====================================================
@@ -69,27 +72,25 @@ def es_pedido_otro(texto):
     return texto.lower().strip() in [
         "otro",
         "y otro",
+        "y que otro",
         "algún otro",
         "algun otro",
         "otro manual",
-        "y que otro",
         "hay otro",
         "hay alguno más",
         "hay alguno mas"
     ]
 
 
-def es_salida_modo_manual(texto):
-    texto = texto.lower()
-    return any(t in texto for t in [
-        "como",
-        "qué es",
-        "que es",
-        "explicame",
-        "explica",
-        "ayuda",
-        "mantenimiento"
-    ])
+def es_salida_manual(texto):
+    return texto.lower().strip() in [
+        "ok",
+        "gracias",
+        "listo",
+        "perfecto",
+        "cambiemos de tema",
+        "otra cosa"
+    ]
 
 # =====================================================
 # SYSTEM + CONOCIMIENTO
@@ -166,7 +167,7 @@ def index():
     session.permanent = True
     session.setdefault("historial", [])
     session.setdefault("manuales_mostrados", [])
-    session.setdefault("modo", None)
+    session.setdefault("modo", MODO_GENERAL)
     return render_template("index.html")
 
 
@@ -179,32 +180,51 @@ def chat():
         return jsonify({"type": "text", "text": "Decime algo para comenzar."})
 
     # ============================
-    # MODO MANUALES
+    # ENTRADA A MANUALES
     # ============================
 
     if es_pedido_lista(mensaje):
-        session["modo"] = "manuales"
+        session["modo"] = MODO_MANUALES
         session["manuales_mostrados"] = MANUALES
         return jsonify({"type": "manual_list", "manuales": MANUALES})
 
     encontrados = buscar_manuales(mensaje)
     if encontrados:
-        session["modo"] = "manuales"
+        session["modo"] = MODO_MANUALES
         session["manuales_mostrados"] = encontrados
         return jsonify({"type": "manual_list", "manuales": encontrados})
 
-    if session.get("modo") == "manuales" and es_pedido_otro(mensaje):
-        ya = session.get("manuales_mostrados", [])
-        restantes = [m for m in MANUALES if m not in ya]
+    # ============================
+    # MODO MANUALES (BACKEND PURO)
+    # ============================
 
-        if restantes:
-            session["manuales_mostrados"] = restantes
-            return jsonify({"type": "manual_list", "manuales": restantes})
+    if session.get("modo") == MODO_MANUALES:
 
-        return jsonify({"type": "text", "text": "No hay otros manuales disponibles."})
+        if es_pedido_otro(mensaje):
+            ya = session.get("manuales_mostrados", [])
+            restantes = [m for m in MANUALES if m not in ya]
 
-    if session.get("modo") == "manuales" and es_salida_modo_manual(mensaje):
-        session["modo"] = None
+            if restantes:
+                session["manuales_mostrados"] = restantes
+                return jsonify({"type": "manual_list", "manuales": restantes})
+
+            return jsonify({
+                "type": "text",
+                "text": "No hay otros manuales disponibles."
+            })
+
+        if es_salida_manual(mensaje):
+            session["modo"] = MODO_GENERAL
+            return jsonify({
+                "type": "text",
+                "text": "Perfecto. ¿En qué más te puedo ayudar?"
+            })
+
+        # 🔒 BLOQUEO TOTAL AL MODELO
+        return jsonify({
+            "type": "text",
+            "text": "Si querés otro manual decime “otro”, o decime “ok” para seguir con otra cosa."
+        })
 
     # ============================
     # CONVERSACIÓN GENERAL
@@ -218,7 +238,6 @@ def chat():
     session["historial"] = historial[-12:]
 
     return jsonify({"type": "text", "text": respuesta})
-
 
 # =====================================================
 # RUN
