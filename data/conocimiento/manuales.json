@@ -1,0 +1,32 @@
+{
+  "domain": "manuales",
+  "description": "Manuales disponibles para consulta y asistencia",
+  "items": [
+    {
+      "id": "piscina",
+      "title": "Manual de Piscina",
+      "category": "hogar",
+      "tags": ["piscina", "agua", "mantenimiento", "verano"],
+      "summary": "Guía para el uso, mantenimiento y seguridad de piscinas.",
+      "format": "pdf",
+      "language": "es",
+      "link": "/static/manuales/piscina.pdf",
+      "priority": 1
+    },
+    {
+      "id": "jardineria",
+      "title": "Manual de Jardinería",
+      "category": "hogar",
+      "tags": ["jardín", "plantas", "riego"],
+      "summary": "Instrucciones para el cuidado general del jardín.",
+      "format": "pdf",
+      "language": "es",
+      "link": "/static/manuales/jardineria.pdf",
+      "priority": 2
+    }
+  ],
+  "navigation": {
+    "allow_sequential": true,
+    "style": "natural"
+  }
+}
