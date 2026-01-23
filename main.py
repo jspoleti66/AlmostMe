@@ -17,7 +17,7 @@ app.permanent_session_lifetime = timedelta(minutes=30)
 
 BASE_PATH = "data/conocimiento"
 SYSTEM_PATH = "data/prompts/system.txt"
-DOMAINS_PATH = "data/conocimiento/domains.json"
+DOMAINS_PATH = os.path.join(BASE_PATH, "domains.json")
 
 # =====================================================
 # CARGA DE ARCHIVOS
@@ -42,6 +42,9 @@ def cargar_dominios_contenido(base_path=BASE_PATH):
         nombre, ext = os.path.splitext(archivo)
         ruta = os.path.join(base_path, archivo)
 
+        if nombre == "domains":
+            continue
+
         if ext == ".txt":
             contenido = cargar_txt(ruta)
             if contenido:
@@ -50,7 +53,7 @@ def cargar_dominios_contenido(base_path=BASE_PATH):
                     "content": contenido
                 }
 
-        elif ext == ".json" and nombre != "domains":
+        elif ext == ".json":
             data = cargar_json(ruta)
             dominios[nombre] = {
                 "type": "json",
@@ -67,23 +70,18 @@ DOMAINS_CONFIG = cargar_json(DOMAINS_PATH)
 # UTILIDADES
 # =====================================================
 
-def es_pedido_manual(texto):
-    palabras = ["manual", "manuales", "guía", "instrucciones", "documentación"]
-    return any(p in texto.lower() for p in palabras)
-
 def resolver_dominio(mensaje, domains_config):
     texto = mensaje.lower()
 
     for dominio, cfg in domains_config.items():
-        keywords = cfg.get("keywords", [])
-        if any(k in texto for k in keywords):
-            return dominio
+        for kw in cfg.get("keywords", []):
+            if kw in texto:
+                return dominio
 
     return None
 
 def render_manual_response(manuales_json, mensaje):
     items = manuales_json.get("items", [])
-
     if not items:
         return "No hay manuales disponibles."
 
@@ -98,16 +96,12 @@ def render_manual_response(manuales_json, mensaje):
     if not relevantes:
         return "No existe un manual para eso."
 
-    respuesta = []
-
-    for m in relevantes:
-        respuesta.append(
-            f"Título: {m['title']}\n"
-            f"Descripción: {m['summary']}\n"
-            f"Link: {m['url']}"
-        )
-
-    return "\n\n".join(respuesta)
+    return "\n\n".join(
+        f"Título: {m['title']}\n"
+        f"Descripción: {m['summary']}\n"
+        f"Link: {m['url']}"
+        for m in relevantes
+    )
 
 def construir_contexto(dominio):
     bloque = DOMINIOS_CONTENIDO[dominio]["content"]
@@ -141,9 +135,7 @@ def consultar_modelo(historial, mensaje_usuario, dominio):
         credential=AzureKeyCredential(token),
     )
 
-    mensajes = [
-        SystemMessage(content=construir_contexto(dominio))
-    ]
+    mensajes = [SystemMessage(content=construir_contexto(dominio))]
 
     for msg in historial[-6:]:
         if msg["role"] == "user":
@@ -183,20 +175,22 @@ def chat():
 
     historial = session.get("historial", [])
 
-    # ---- MANUALES (SIN MODELO) ----
-    if es_pedido_manual(mensaje) and "manuales" in DOMINIOS_CONTENIDO:
+    dominio = resolver_dominio(mensaje, DOMAINS_CONFIG)
+
+    if not dominio:
+        respuesta = "No tengo esa información."
+
+    elif dominio == "manuales":
         respuesta = render_manual_response(
             DOMINIOS_CONTENIDO["manuales"]["content"],
             mensaje
         )
 
-    else:
-        dominio = resolver_dominio(mensaje, DOMAINS_CONFIG)
+    elif dominio in DOMINIOS_CONTENIDO:
+        respuesta = consultar_modelo(historial, mensaje, dominio)
 
-        if not dominio or dominio not in DOMINIOS_CONTENIDO:
-            respuesta = "No tengo esa información."
-        else:
-            respuesta = consultar_modelo(historial, mensaje, dominio)
+    else:
+        respuesta = "No tengo esa información."
 
     historial.append({"role": "user", "content": mensaje})
     historial.append({"role": "assistant", "content": respuesta})
