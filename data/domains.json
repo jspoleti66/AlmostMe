@@ -1,0 +1,19 @@
+{
+  "hogar_seguridad": {
+    "file": "hogar_seguridad.txt",
+    "keywords": ["llave", "llaves", "portón", "alarma", "seguridad"]
+  },
+  "hogar_distribucion": {
+    "file": "hogar_distribucion.txt",
+    "keywords": ["casa", "habitación", "lavadero", "living"]
+  },
+  "hogar_mantenimiento": {
+    "file": "hogar_mantenimiento.txt",
+    "keywords": ["mantenimiento", "arreglo", "reparar"]
+  },
+  "manuales": {
+    "file": "manuales.json",
+    "type": "json",
+    "keywords": ["manual", "guía", "instrucciones"]
+  }
+}
