@@ -17,6 +17,7 @@ app.permanent_session_lifetime = timedelta(minutes=30)
 
 BASE_PATH = "data/conocimiento"
 SYSTEM_PATH = "data/prompts/system.txt"
+DOMAINS_PATH = "data/conocimiento/domains.json"
 
 # =====================================================
 # CARGA DE ARCHIVOS
@@ -34,7 +35,7 @@ def cargar_json(path):
     with open(path, encoding="utf-8") as f:
         return json.load(f)
 
-def cargar_dominios(base_path=BASE_PATH):
+def cargar_dominios_contenido(base_path=BASE_PATH):
     dominios = {}
 
     for archivo in os.listdir(base_path):
@@ -49,7 +50,7 @@ def cargar_dominios(base_path=BASE_PATH):
                     "content": contenido
                 }
 
-        elif ext == ".json":
+        elif ext == ".json" and nombre != "domains":
             data = cargar_json(ruta)
             dominios[nombre] = {
                 "type": "json",
@@ -59,7 +60,8 @@ def cargar_dominios(base_path=BASE_PATH):
     return dominios
 
 SYSTEM_PROMPT = cargar_txt(SYSTEM_PATH)
-DOMINIOS = cargar_dominios()
+DOMINIOS_CONTENIDO = cargar_dominios_contenido()
+DOMAINS_CONFIG = cargar_json(DOMAINS_PATH)
 
 # =====================================================
 # UTILIDADES
@@ -68,6 +70,16 @@ DOMINIOS = cargar_dominios()
 def es_pedido_manual(texto):
     palabras = ["manual", "manuales", "guía", "instrucciones", "documentación"]
     return any(p in texto.lower() for p in palabras)
+
+def resolver_dominio(mensaje, domains_config):
+    texto = mensaje.lower()
+
+    for dominio, cfg in domains_config.items():
+        keywords = cfg.get("keywords", [])
+        if any(k in texto for k in keywords):
+            return dominio
+
+    return None
 
 def render_manual_response(manuales_json, mensaje):
     items = manuales_json.get("items", [])
@@ -84,7 +96,7 @@ def render_manual_response(manuales_json, mensaje):
     ]
 
     if not relevantes:
-        relevantes = items
+        return "No existe un manual para eso."
 
     respuesta = []
 
@@ -98,7 +110,7 @@ def render_manual_response(manuales_json, mensaje):
     return "\n\n".join(respuesta)
 
 def construir_contexto(dominio):
-    bloque = DOMINIOS[dominio]["content"]
+    bloque = DOMINIOS_CONTENIDO[dominio]["content"]
 
     return f"""
 {SYSTEM_PROMPT}
@@ -122,7 +134,7 @@ No completes, no infieras, no relaciones.
 def consultar_modelo(historial, mensaje_usuario, dominio):
     token = os.getenv("GITHUB_TOKEN")
     if not token:
-        return "Error de configuración del modelo."
+        return "No tengo esa información."
 
     client = ChatCompletionsClient(
         endpoint="https://models.inference.ai.azure.com",
@@ -171,21 +183,20 @@ def chat():
 
     historial = session.get("historial", [])
 
-    # ---- MANUALES (NO MODELO) ----
-    if es_pedido_manual(mensaje) and "manuales" in DOMINIOS:
+    # ---- MANUALES (SIN MODELO) ----
+    if es_pedido_manual(mensaje) and "manuales" in DOMINIOS_CONTENIDO:
         respuesta = render_manual_response(
-            DOMINIOS["manuales"]["content"],
+            DOMINIOS_CONTENIDO["manuales"]["content"],
             mensaje
         )
 
-    # ---- DOMINIOS TXT ----
     else:
-        dominio = next(
-            (d for d in DOMINIOS if d != "manuales"),
-            None
-        )
+        dominio = resolver_dominio(mensaje, DOMAINS_CONFIG)
 
-        respuesta = consultar_modelo(historial, mensaje, dominio)
+        if not dominio or dominio not in DOMINIOS_CONTENIDO:
+            respuesta = "No tengo esa información."
+        else:
+            respuesta = consultar_modelo(historial, mensaje, dominio)
 
     historial.append({"role": "user", "content": mensaje})
     historial.append({"role": "assistant", "content": respuesta})
