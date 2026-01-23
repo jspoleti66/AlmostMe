@@ -10,7 +10,7 @@
       "summary": "Guía para el uso, mantenimiento y seguridad de piscinas.",
       "format": "pdf",
       "language": "es",
-      "link": "/static/manuales/piscina.pdf",
+      "url": "/static/manuales/piscina.pdf",
       "priority": 1
     },
     {
@@ -21,7 +21,7 @@
       "summary": "Instrucciones para el cuidado general del jardín.",
       "format": "pdf",
       "language": "es",
-      "link": "/static/manuales/jardineria.pdf",
+      "url": "/static/manuales/jardineria.pdf",
       "priority": 2
     }
   ],
