@@ -103,7 +103,10 @@ def render_manual_response(manuales_json, mensaje):
         for m in relevantes
     )
 
-def construir_contexto(dominio):
+def construir_contexto(dominio=None):
+    if not dominio:
+        return SYSTEM_PROMPT.strip()
+
     bloque = DOMINIOS_CONTENIDO[dominio]["content"]
 
     return f"""
@@ -125,7 +128,7 @@ No completes, no infieras, no relaciones.
 # MODELO
 # =====================================================
 
-def consultar_modelo(historial, mensaje_usuario, dominio):
+def consultar_modelo(historial, mensaje_usuario, dominio=None):
     token = os.getenv("GITHUB_TOKEN")
     if not token:
         return "No tengo esa información."
@@ -177,10 +180,11 @@ def chat():
 
     dominio = resolver_dominio(mensaje, DOMAINS_CONFIG)
 
-    if not dominio:
-        respuesta = "No tengo esa información."
+    # DEBUG (podés dejarlo en Render)
+    print("MENSAJE:", mensaje)
+    print("DOMINIO:", dominio)
 
-    elif dominio == "manuales":
+    if dominio == "manuales":
         respuesta = render_manual_response(
             DOMINIOS_CONTENIDO["manuales"]["content"],
             mensaje
@@ -190,7 +194,8 @@ def chat():
         respuesta = consultar_modelo(historial, mensaje, dominio)
 
     else:
-        respuesta = "No tengo esa información."
+        # IMPORTANTE: sin dominio también consulta al modelo
+        respuesta = consultar_modelo(historial, mensaje, dominio=None)
 
     historial.append({"role": "user", "content": mensaje})
     historial.append({"role": "assistant", "content": respuesta})
