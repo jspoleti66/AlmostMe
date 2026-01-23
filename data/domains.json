@@ -11,9 +11,41 @@
     "file": "hogar_mantenimiento.txt",
     "keywords": ["mantenimiento", "arreglo", "reparar"]
   },
+  "hogar_otros": {
+    "file": "hogar_otros.txt",
+    "keywords": ["hogar", "casa", "general"]
+  },
+  "historia_personal": {
+    "file": "historia_personal.txt",
+    "keywords": ["historia", "biografía", "vida"]
+  },
+  "contactos_clave": {
+    "file": "contactos_clave.txt",
+    "keywords": ["contacto", "teléfono", "email", "persona"]
+  },
+  "intereses": {
+    "file": "intereses.txt",
+    "keywords": ["intereses", "gustos", "hobbies"]
+  },
+  "cv": {
+    "file": "cv.txt",
+    "keywords": ["trabajo", "experiencia", "curriculum", "cv"]
+  },
+  "personalidad": {
+    "file": "personalidad.txt",
+    "keywords": ["personalidad", "carácter", "forma de ser"]
+  },
+  "respuestas_frecuentes": {
+    "file": "respuestas_frecuentes.txt",
+    "keywords": ["frecuente", "pregunta", "faq"]
+  },
+  "conocimiento_tecnico": {
+    "file": "conocimiento_tecnico.txt",
+    "keywords": ["técnico", "sistema", "software", "tecnología"]
+  },
   "manuales": {
     "file": "manuales.json",
     "type": "json",
-    "keywords": ["manual", "guía", "instrucciones"]
+    "keywords": ["manual", "guía", "instrucciones", "documentación"]
   }
 }
