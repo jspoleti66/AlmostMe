@@ -15,59 +15,67 @@ app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "almostme_secret")
 app.permanent_session_lifetime = timedelta(minutes=30)
 
+BASE_PATH = "data/conocimiento"
+
 # =====================================================
-# CARGA DE ARCHIVOS
+# LOADERS GENÉRICOS
 # =====================================================
 
-def cargar_archivo(path):
-    if not os.path.exists(path):
-        return ""
-    with open(path, encoding="utf-8") as f:
-        return f.read().strip()
+def cargar_txt(path):
+    return open(path, encoding="utf-8").read().strip() if os.path.exists(path) else ""
 
-def cargar_conocimiento_completo(base_path="data/conocimiento"):
-    if not os.path.exists(base_path):
-        return ""
+def cargar_json(path):
+    return json.load(open(path, encoding="utf-8")) if os.path.exists(path) else {}
 
-    bloques = []
+def cargar_dominios():
+    config = cargar_json("data/domains.json")
+    data = {}
 
-    for archivo in sorted(os.listdir(base_path)):
-        ruta = os.path.join(base_path, archivo)
+    for dominio, cfg in config.items():
+        path = os.path.join(BASE_PATH, cfg["file"])
+        if cfg.get("type") == "json":
+            data[dominio] = cargar_json(path)
+        else:
+            data[dominio] = cargar_txt(path)
 
-        if archivo.endswith(".txt"):
-            with open(ruta, encoding="utf-8") as f:
-                contenido = f.read().strip()
-                if contenido:
-                    bloques.append(f"### {archivo}\n{contenido}")
+    return config, data
 
-        elif archivo.endswith(".json"):
-            with open(ruta, encoding="utf-8") as f:
-                data = json.load(f)
-                bloques.append(
-                    f"### {archivo}\n{json.dumps(data, ensure_ascii=False, indent=2)}"
-                )
-
-    return "\n\n".join(bloques)
+DOMINIOS_CONFIG, DOMINIOS_DATA = cargar_dominios()
 
 # =====================================================
 # CONTEXTO BASE
 # =====================================================
 
-SYSTEM_PROMPT = cargar_archivo("data/prompts/system.txt")
-CONOCIMIENTO_COMPLETO = cargar_conocimiento_completo()
+SYSTEM_PROMPT = cargar_txt("data/prompts/system.txt")
 
-CONTEXTO_BASE = f"""
+def detectar_dominio(mensaje):
+    texto = mensaje.lower()
+    for dominio, cfg in DOMINIOS_CONFIG.items():
+        for kw in cfg.get("keywords", []):
+            if kw in texto:
+                return dominio
+    return None
+
+def construir_contexto(mensaje):
+    dominio = detectar_dominio(mensaje)
+
+    if dominio and dominio in DOMINIOS_DATA:
+        contenido = DOMINIOS_DATA[dominio]
+        return f"""
 {SYSTEM_PROMPT}
 
 ────────────────────────────────────────
-CONOCIMIENTO BASE DISPONIBLE
+CONOCIMIENTO DEL DOMINIO: {dominio}
 ────────────────────────────────────────
 
-{CONOCIMIENTO_COMPLETO}
+{json.dumps(contenido, ensure_ascii=False, indent=2) if isinstance(contenido, dict) else contenido}
 """.strip()
 
+    # fallback minimal
+    return SYSTEM_PROMPT
+
 # =====================================================
-# GITHUB MODELS (Azure AI Inference)
+# MODELO
 # =====================================================
 
 def consultar_modelo(historial, mensaje_usuario):
@@ -75,20 +83,18 @@ def consultar_modelo(historial, mensaje_usuario):
     if not token:
         return "Error de configuración del modelo."
 
+    contexto = construir_contexto(mensaje_usuario)
+
     client = ChatCompletionsClient(
         endpoint="https://models.inference.ai.azure.com",
         credential=AzureKeyCredential(token),
     )
 
-    mensajes = [
-        SystemMessage(content=CONTEXTO_BASE)
-    ]
+    mensajes = [SystemMessage(content=contexto)]
 
     for msg in historial[-6:]:
-        if msg["role"] == "user":
-            mensajes.append(UserMessage(content=msg["content"]))
-        elif msg["role"] == "assistant":
-            mensajes.append(AssistantMessage(content=msg["content"]))
+        cls = UserMessage if msg["role"] == "user" else AssistantMessage
+        mensajes.append(cls(content=msg["content"]))
 
     mensajes.append(UserMessage(content=mensaje_usuario))
 
@@ -100,11 +106,7 @@ def consultar_modelo(historial, mensaje_usuario):
             max_tokens=384,
             top_p=0.1
         )
-
-        if response and response.choices:
-            return response.choices[0].message.content.strip()
-
-        return "No tengo una respuesta para eso."
+        return response.choices[0].message.content.strip()
 
     except Exception as e:
         print("❌ ERROR MODELO:", e)
@@ -129,13 +131,14 @@ def chat():
         return jsonify({"type": "text", "text": "Decime algo para empezar."})
 
     historial = session.get("historial", [])
-
     respuesta = consultar_modelo(historial, mensaje)
 
-    historial.append({"role": "user", "content": mensaje})
-    historial.append({"role": "assistant", "content": respuesta})
-    session["historial"] = historial[-12:]
+    historial.extend([
+        {"role": "user", "content": mensaje},
+        {"role": "assistant", "content": respuesta}
+    ])
 
+    session["historial"] = historial[-12:]
     return jsonify({"type": "text", "text": respuesta})
 
 # =====================================================
