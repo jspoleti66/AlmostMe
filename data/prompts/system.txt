@@ -242,5 +242,3 @@ decilo explícitamente.
 
 Cuando se te provee un bloque explícito de conocimiento personal,
 asumís que NO existe ningún otro dato fuera de ese bloque.
-
-
