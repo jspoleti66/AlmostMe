@@ -16,101 +16,140 @@ app.secret_key = os.getenv("SECRET_KEY", "almostme_secret")
 app.permanent_session_lifetime = timedelta(minutes=30)
 
 BASE_PATH = "data/conocimiento"
+SYSTEM_PATH = "data/prompts/system.txt"
 
 # =====================================================
-# LOADERS GENÉRICOS
+# CARGA DE ARCHIVOS
 # =====================================================
 
 def cargar_txt(path):
-    return open(path, encoding="utf-8").read().strip() if os.path.exists(path) else ""
+    if not os.path.exists(path):
+        return ""
+    with open(path, encoding="utf-8") as f:
+        return f.read().strip()
 
 def cargar_json(path):
-    return json.load(open(path, encoding="utf-8")) if os.path.exists(path) else {}
+    if not os.path.exists(path):
+        return {}
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)
 
-def cargar_dominios():
-    config = cargar_json("data/domains.json")
-    data = {}
+def cargar_dominios(base_path=BASE_PATH):
+    dominios = {}
 
-    for dominio, cfg in config.items():
-        path = os.path.join(BASE_PATH, cfg["file"])
-        if cfg.get("type") == "json":
-            data[dominio] = cargar_json(path)
-        else:
-            data[dominio] = cargar_txt(path)
+    for archivo in os.listdir(base_path):
+        nombre, ext = os.path.splitext(archivo)
+        ruta = os.path.join(base_path, archivo)
 
-    return config, data
+        if ext == ".txt":
+            contenido = cargar_txt(ruta)
+            if contenido:
+                dominios[nombre] = {
+                    "type": "text",
+                    "content": contenido
+                }
 
-DOMINIOS_CONFIG, DOMINIOS_DATA = cargar_dominios()
+        elif ext == ".json":
+            data = cargar_json(ruta)
+            dominios[nombre] = {
+                "type": "json",
+                "content": data
+            }
+
+    return dominios
+
+SYSTEM_PROMPT = cargar_txt(SYSTEM_PATH)
+DOMINIOS = cargar_dominios()
 
 # =====================================================
-# CONTEXTO BASE
+# UTILIDADES
 # =====================================================
 
-SYSTEM_PROMPT = cargar_txt("data/prompts/system.txt")
+def es_pedido_manual(texto):
+    palabras = ["manual", "manuales", "guía", "instrucciones", "documentación"]
+    return any(p in texto.lower() for p in palabras)
 
-def detectar_dominio(mensaje):
+def render_manual_response(manuales_json, mensaje):
+    items = manuales_json.get("items", [])
+
+    if not items:
+        return "No hay manuales disponibles."
+
     texto = mensaje.lower()
-    for dominio, cfg in DOMINIOS_CONFIG.items():
-        for kw in cfg.get("keywords", []):
-            if kw in texto:
-                return dominio
-    return None
 
-def construir_contexto(mensaje):
-    dominio = detectar_dominio(mensaje)
+    relevantes = [
+        m for m in items
+        if m["title"].lower() in texto
+        or any(tag in texto for tag in m.get("tags", []))
+    ]
 
-    if dominio and dominio in DOMINIOS_DATA:
-        contenido = DOMINIOS_DATA[dominio]
-        return f"""
+    if not relevantes:
+        relevantes = items
+
+    respuesta = []
+
+    for m in relevantes:
+        respuesta.append(
+            f"Título: {m['title']}\n"
+            f"Descripción: {m['summary']}\n"
+            f"Link: {m['url']}"
+        )
+
+    return "\n\n".join(respuesta)
+
+def construir_contexto(dominio):
+    bloque = DOMINIOS[dominio]["content"]
+
+    return f"""
 {SYSTEM_PROMPT}
 
 ────────────────────────────────────────
-CONOCIMIENTO DEL DOMINIO: {dominio}
+CONOCIMIENTO PERSONAL AUTORIZADO
+DOMINIO: {dominio}
 ────────────────────────────────────────
 
-{json.dumps(contenido, ensure_ascii=False, indent=2) if isinstance(contenido, dict) else contenido}
-""".strip()
+La siguiente información es el ÚNICO conocimiento personal disponible.
+No existe ningún otro dato fuera de este bloque.
+No completes, no infieras, no relaciones.
 
-    # fallback minimal
-    return SYSTEM_PROMPT
+{bloque}
+""".strip()
 
 # =====================================================
 # MODELO
 # =====================================================
 
-def consultar_modelo(historial, mensaje_usuario):
+def consultar_modelo(historial, mensaje_usuario, dominio):
     token = os.getenv("GITHUB_TOKEN")
     if not token:
         return "Error de configuración del modelo."
-
-    contexto = construir_contexto(mensaje_usuario)
 
     client = ChatCompletionsClient(
         endpoint="https://models.inference.ai.azure.com",
         credential=AzureKeyCredential(token),
     )
 
-    mensajes = [SystemMessage(content=contexto)]
+    mensajes = [
+        SystemMessage(content=construir_contexto(dominio))
+    ]
 
     for msg in historial[-6:]:
-        cls = UserMessage if msg["role"] == "user" else AssistantMessage
-        mensajes.append(cls(content=msg["content"]))
+        if msg["role"] == "user":
+            mensajes.append(UserMessage(content=msg["content"]))
+        elif msg["role"] == "assistant":
+            mensajes.append(AssistantMessage(content=msg["content"]))
 
     mensajes.append(UserMessage(content=mensaje_usuario))
 
-    try:
-        response = client.complete(
-            model="Meta-Llama-3.1-8B-Instruct",
-            messages=mensajes,
-            temperature=0.2,
-            max_tokens=384,
-            top_p=0.1
-        )
-        return response.choices[0].message.content.strip()
+    response = client.complete(
+        model="Meta-Llama-3.1-8B-Instruct",
+        messages=mensajes,
+        temperature=0.2,
+        max_tokens=384,
+        top_p=0.1
+    )
 
-    except Exception as e:
-        print("❌ ERROR MODELO:", e)
-        return "No pude responder en este momento."
+    return response.choices[0].message.content.strip()
 
 # =====================================================
 # RUTAS
@@ -128,17 +167,30 @@ def chat():
     mensaje = data.get("message", "").strip()
 
     if not mensaje:
-        return jsonify({"type": "text", "text": "Decime algo para empezar."})
+        return jsonify({"type": "text", "text": "Decime."})
 
     historial = session.get("historial", [])
-    respuesta = consultar_modelo(historial, mensaje)
 
-    historial.extend([
-        {"role": "user", "content": mensaje},
-        {"role": "assistant", "content": respuesta}
-    ])
+    # ---- MANUALES (NO MODELO) ----
+    if es_pedido_manual(mensaje) and "manuales" in DOMINIOS:
+        respuesta = render_manual_response(
+            DOMINIOS["manuales"]["content"],
+            mensaje
+        )
 
+    # ---- DOMINIOS TXT ----
+    else:
+        dominio = next(
+            (d for d in DOMINIOS if d != "manuales"),
+            None
+        )
+
+        respuesta = consultar_modelo(historial, mensaje, dominio)
+
+    historial.append({"role": "user", "content": mensaje})
+    historial.append({"role": "assistant", "content": respuesta})
     session["historial"] = historial[-12:]
+
     return jsonify({"type": "text", "text": respuesta})
 
 # =====================================================
