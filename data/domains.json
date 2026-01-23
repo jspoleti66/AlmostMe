@@ -13,39 +13,35 @@
   },
   "hogar_otros": {
     "file": "hogar_otros.txt",
-    "keywords": ["hogar", "casa", "general"]
+    "keywords": ["hogar"]
   },
   "historia_personal": {
     "file": "historia_personal.txt",
-    "keywords": ["historia", "biografía", "vida"]
-  },
-  "contactos_clave": {
-    "file": "contactos_clave.txt",
-    "keywords": ["contacto", "teléfono", "email", "persona"]
-  },
-  "intereses": {
-    "file": "intereses.txt",
-    "keywords": ["intereses", "gustos", "hobbies"]
+    "keywords": ["nací", "historia", "vida"]
   },
   "cv": {
     "file": "cv.txt",
-    "keywords": ["trabajo", "experiencia", "curriculum", "cv"]
+    "keywords": ["trabajo", "profesión", "dedico", "ocupación"]
+  },
+  "contactos_clave": {
+    "file": "contactos_clave.txt",
+    "keywords": ["contacto", "teléfono", "email"]
+  },
+  "intereses": {
+    "file": "intereses.txt",
+    "keywords": ["intereses", "hobbies", "gustos"]
   },
   "personalidad": {
     "file": "personalidad.txt",
-    "keywords": ["personalidad", "carácter", "forma de ser"]
+    "keywords": ["sos", "personalidad"]
   },
   "respuestas_frecuentes": {
     "file": "respuestas_frecuentes.txt",
-    "keywords": ["frecuente", "pregunta", "faq"]
-  },
-  "conocimiento_tecnico": {
-    "file": "conocimiento_tecnico.txt",
-    "keywords": ["técnico", "sistema", "software", "tecnología"]
+    "keywords": ["faq", "preguntas"]
   },
   "manuales": {
     "file": "manuales.json",
     "type": "json",
-    "keywords": ["manual", "guía", "instrucciones", "documentación"]
+    "keywords": ["manual", "manuales", "guía", "instrucciones"]
   }
 }
