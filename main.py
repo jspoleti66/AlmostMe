@@ -17,6 +17,7 @@ app.permanent_session_lifetime = timedelta(minutes=30)
 
 BASE_PATH = "data/conocimiento"
 SYSTEM_PATH = "data/prompts/system.txt"
+DOMAINS_PATH = os.path.join(BASE_PATH, "domains.json")
 
 # =====================================================
 # CARGA DE ARCHIVOS
@@ -34,72 +35,112 @@ def cargar_json(path):
     with open(path, encoding="utf-8") as f:
         return json.load(f)
 
-def cargar_conocimiento(base_path=BASE_PATH):
-    conocimiento = {}
+def cargar_dominios_contenido(base_path=BASE_PATH):
+    dominios = {}
 
     for archivo in os.listdir(base_path):
         nombre, ext = os.path.splitext(archivo)
         ruta = os.path.join(base_path, archivo)
 
+        if nombre == "domains":
+            continue
+
         if ext == ".txt":
             contenido = cargar_txt(ruta)
             if contenido:
-                conocimiento[nombre] = contenido
+                dominios[nombre] = {
+                    "type": "text",
+                    "content": contenido
+                }
 
         elif ext == ".json":
             data = cargar_json(ruta)
-            if data:
-                conocimiento[nombre] = json.dumps(
-                    data,
-                    ensure_ascii=False,
-                    indent=2
-                )
+            dominios[nombre] = {
+                "type": "json",
+                "content": data
+            }
 
-    return conocimiento
+    return dominios
 
 SYSTEM_PROMPT = cargar_txt(SYSTEM_PATH)
-CONOCIMIENTO = cargar_conocimiento()
+DOMINIOS_CONTENIDO = cargar_dominios_contenido()
+DOMAINS_CONFIG = cargar_json(DOMAINS_PATH)
 
 # =====================================================
-# CONTEXTO GLOBAL
+# UTILIDADES
 # =====================================================
 
-def construir_contexto_global():
-    bloques = []
+def resolver_dominio(mensaje, domains_config):
+    texto = mensaje.lower()
+    for dominio, cfg in domains_config.items():
+        for kw in cfg.get("keywords", []):
+            if kw in texto:
+                return dominio
+    return None
 
-    for dominio, contenido in CONOCIMIENTO.items():
-        bloques.append(
-            "────────────────────────────────────────\n"
-            f"DOMINIO: {dominio}\n"
-            "────────────────────────────────────────\n"
-            f"{contenido}"
+# 🔴 FUNCIÓN CLAVE: vCard determinista para manuales
+def render_manual_response(manuales_json, mensaje):
+    items = manuales_json.get("items", [])
+    if not items:
+        return "No hay manuales disponibles."
+
+    texto = mensaje.lower()
+
+    relevantes = [
+        m for m in items
+        if m["title"].lower() in texto
+        or any(tag in texto for tag in m.get("tags", []))
+    ]
+
+    if not relevantes:
+        return "No existe un manual para eso."
+
+    cards = []
+    for m in relevantes:
+        cards.append(
+            f"📘 **{m['title']}**\n"
+            f"{m['summary']}\n\n"
+            f"[📥 Abrir manual]({m['url']})"
         )
 
-    conocimiento_unido = "\n\n".join(bloques)
+    return "\n\n".join(cards)
 
-    return (
-        f"{SYSTEM_PROMPT}\n\n"
-        "════════════════════════════════════════\n"
-        "CONOCIMIENTO PERSONAL AUTORIZADO\n"
-        "════════════════════════════════════════\n\n"
-        f"{conocimiento_unido}"
-    )
+def construir_contexto(dominio=None):
+    if not dominio:
+        return SYSTEM_PROMPT.strip()
+
+    bloque = DOMINIOS_CONTENIDO[dominio]["content"]
+
+    return f"""
+{SYSTEM_PROMPT}
+
+────────────────────────────────────────
+CONOCIMIENTO PERSONAL AUTORIZADO
+DOMINIO: {dominio}
+────────────────────────────────────────
+
+La siguiente información es el ÚNICO conocimiento personal disponible.
+No existe ningún otro dato fuera de este bloque.
+No completes, no infieras, no relaciones.
+
+{bloque}
+""".strip()
 
 # =====================================================
 # MODELO
 # =====================================================
 
-def consultar_modelo(historial, mensaje_usuario):
+def consultar_modelo(historial, mensaje_usuario, dominio=None):
     token = os.getenv("GITHUB_TOKEN")
     if not token:
-        return "No tengo acceso al modelo."
+        return "No tengo esa información."
 
     client = ChatCompletionsClient(
         endpoint="https://models.inference.ai.azure.com",
         credential=AzureKeyCredential(token),
     )
 
-    mensajes = [SystemMessage(content=construir_contexto_global())]
+    mensajes = [SystemMessage(content=construir_contexto(dominio))]
 
     for msg in historial[-6:]:
         if msg["role"] == "user":
@@ -113,7 +154,7 @@ def consultar_modelo(historial, mensaje_usuario):
         model="Meta-Llama-3.1-8B-Instruct",
         messages=mensajes,
         temperature=0.2,
-        max_tokens=512,
+        max_tokens=384,
         top_p=0.1
     )
 
@@ -138,10 +179,17 @@ def chat():
         return jsonify({"type": "text", "text": "Decime."})
 
     historial = session.get("historial", [])
+    dominio = resolver_dominio(mensaje, DOMAINS_CONFIG)
 
-    print("MENSAJE:", mensaje)
-
-    respuesta = consultar_modelo(historial, mensaje)
+    if dominio == "manuales":
+        respuesta = render_manual_response(
+            DOMINIOS_CONTENIDO["manuales"]["content"],
+            mensaje
+        )
+    elif dominio in DOMINIOS_CONTENIDO:
+        respuesta = consultar_modelo(historial, mensaje, dominio)
+    else:
+        respuesta = consultar_modelo(historial, mensaje, dominio=None)
 
     historial.append({"role": "user", "content": mensaje})
     historial.append({"role": "assistant", "content": respuesta})
