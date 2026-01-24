@@ -1,53 +1,46 @@
-<script>
-  const chat = document.getElementById("chat");
-  const input = document.getElementById("input");
-  const send = document.getElementById("send");
+const chat = document.getElementById("chat");
+const input = document.getElementById("userInput");
+const sendBtn = document.getElementById("sendBtn");
 
-  function addMessage(text, type) {
-    const div = document.createElement("div");
-    div.className = "msg " + type;
-    div.textContent = text;
-    chat.appendChild(div);
-    chat.scrollTop = chat.scrollHeight;
-  }
+sendBtn.addEventListener("click", sendMessage);
+input.addEventListener("keydown", e => {
+  if (e.key === "Enter") sendMessage();
+});
 
-  async function sendMessage() {
-    const text = input.value.trim();
-    if (!text) return;
+async function sendMessage() {
+  const message = input.value.trim();
+  if (!message) return;
 
-    addMessage(text, "user");
-    input.value = "";
+  addMessage(message, "user");
+  input.value = "";
 
-    // indicador "pensando"
-    const thinking = document.createElement("div");
-    thinking.className = "msg bot";
-    thinking.textContent = "Pensando…";
-    chat.appendChild(thinking);
-    chat.scrollTop = chat.scrollHeight;
-
-    try {
-      const res = await fetch("/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ message: text })
-      });
-
-      const data = await res.json();
-      thinking.remove();
-      addMessage(data.reply || "Sin respuesta", "bot");
-
-    } catch (err) {
-      thinking.remove();
-      addMessage("Error al conectar con el servidor", "bot");
-      console.error(err);
-    }
-  }
-
-  send.onclick = sendMessage;
-
-  input.addEventListener("keypress", e => {
-    if (e.key === "Enter") sendMessage();
+  const res = await fetch("/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message })
   });
-</script>
+
+  const data = await res.json();
+
+  if (data.type === "card") {
+    addMessageHTML(data.content, "bot");
+  } else {
+    addMessage(data.content, "bot");
+  }
+}
+
+function addMessage(text, type) {
+  const div = document.createElement("div");
+  div.className = "msg " + type;
+  div.textContent = text;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function addMessageHTML(html, type) {
+  const div = document.createElement("div");
+  div.className = "msg " + type;
+  div.innerHTML = html;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
