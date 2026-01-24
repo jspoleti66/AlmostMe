@@ -4,15 +4,24 @@
   <meta charset="UTF-8" />
   <title>AlmostMe</title>
 
-  <!-- CSS -->
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
 
-  <div class="container">
-    <div id="chat" class="chat"></div>
+  <div class="app">
+    <header class="header">
+      <div class="avatar">AM</div>
+      <div class="title">
+        <h1>AlmostMe</h1>
+        <span>Clon conversacional</span>
+      </div>
+    </header>
 
-    <div class="input-bar">
+    <main id="chat" class="chat">
+      <!-- mensajes -->
+    </main>
+
+    <footer class="input-bar">
       <input
         id="userInput"
         type="text"
@@ -20,10 +29,9 @@
         autocomplete="off"
       />
       <button id="sendBtn">Enviar</button>
-    </div>
+    </footer>
   </div>
 
-  <!-- JS -->
   <script src="/static/script.js"></script>
 </body>
 </html>
