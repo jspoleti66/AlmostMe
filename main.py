@@ -68,22 +68,22 @@ def construir_contexto_global():
     bloques = []
 
     for dominio, contenido in CONOCIMIENTO.items():
-        bloques.append(f"""
-────────────────────────────────────────
-DOMINIO: {dominio}
-────────────────────────────────────────
-{contenido}
-""".strip())
+        bloques.append(
+            "────────────────────────────────────────\n"
+            f"DOMINIO: {dominio}\n"
+            "────────────────────────────────────────\n"
+            f"{contenido}"
+        )
 
-    return f"""
-{SYSTEM_PROMPT}
+    conocimiento_unido = "\n\n".join(bloques)
 
-════════════════════════════════════════
-CONOCIMIENTO PERSONAL AUTORIZADO
-════════════════════════════════════════
-
-{"\n\n".join(bloques)}
-""".strip()
+    return (
+        f"{SYSTEM_PROMPT}\n\n"
+        "════════════════════════════════════════\n"
+        "CONOCIMIENTO PERSONAL AUTORIZADO\n"
+        "════════════════════════════════════════\n\n"
+        f"{conocimiento_unido}"
+    )
 
 # =====================================================
 # MODELO
