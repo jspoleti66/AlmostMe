@@ -2,283 +2,42 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>AlmostMe – Clon Interactivo</title>
+  <title>AlmostMe</title>
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <style>
-    :root {
-      --bg-main: #020617;
-      --bg-panel: #020617;
-      --bg-card: #020617;
-      --bg-chat: #020617;
-      --border: #1e293b;
-      --text-main: #e5e7eb;
-      --text-muted: #94a3b8;
-      --accent: #38bdf8;
-      --user-msg: #2563eb;
-      --bot-msg: #0f172a;
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      margin: 0;
-      height: 100vh;
-      background: radial-gradient(circle at top, #020617, #000);
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-      color: var(--text-main);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-
-    .app {
-      width: 100%;
-      max-width: 1100px;
-      height: 92vh;
-      display: grid;
-      grid-template-columns: 380px 1fr;
-      background: var(--bg-panel);
-      border-radius: 16px;
-      border: 1px solid var(--border);
-      overflow: hidden;
-      box-shadow: 0 0 40px rgba(56,189,248,.12);
-    }
-
-    /* ───────── LEFT PANEL (CLON) ───────── */
-
-    .left {
-      border-right: 1px solid var(--border);
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    .brand {
-      font-size: 22px;
-      font-weight: 600;
-      letter-spacing: .3px;
-    }
-
-    .brand span {
-      color: var(--accent);
-    }
-
-    .avatar-box {
-      flex: 1;
-      border-radius: 14px;
-      background: linear-gradient(145deg, #020617, #020617);
-      border: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--text-muted);
-      font-size: 14px;
-      text-align: center;
-      padding: 20px;
-    }
-
-    .avatar-box video,
-    .avatar-box img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      border-radius: 12px;
-    }
-
-    .status {
-      font-size: 13px;
-      color: var(--text-muted);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #22c55e;
-    }
-
-    /* ───────── CHAT PANEL ───────── */
-
-    .right {
-      display: flex;
-      flex-direction: column;
-      background: var(--bg-chat);
-    }
-
-    .chat-header {
-      padding: 16px 20px;
-      border-bottom: 1px solid var(--border);
-      font-weight: 500;
-      font-size: 15px;
-      color: var(--text-muted);
-    }
-
-    .chat {
-      flex: 1;
-      padding: 20px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-    }
-
-    .msg {
-      max-width: 75%;
-      padding: 12px 14px;
-      border-radius: 14px;
-      line-height: 1.4;
-      font-size: 14px;
-      animation: fadeIn .25s ease;
-    }
-
-    .msg.user {
-      align-self: flex-end;
-      background: linear-gradient(135deg, #2563eb, #1d4ed8);
-      color: white;
-      border-bottom-right-radius: 4px;
-    }
-
-    .msg.bot {
-      align-self: flex-start;
-      background: var(--bot-msg);
-      border: 1px solid var(--border);
-      color: var(--text-main);
-      border-bottom-left-radius: 4px;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(4px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .input-bar {
-      border-top: 1px solid var(--border);
-      padding: 14px;
-      display: flex;
-      gap: 10px;
-      background: var(--bg-panel);
-    }
-
-    .input-bar input {
-      flex: 1;
-      background: #020617;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 12px 14px;
-      color: var(--text-main);
-      outline: none;
-      font-size: 14px;
-    }
-
-    .input-bar input::placeholder {
-      color: var(--text-muted);
-    }
-
-    .input-bar button {
-      background: linear-gradient(135deg, #38bdf8, #0ea5e9);
-      border: none;
-      border-radius: 12px;
-      padding: 0 18px;
-      font-weight: 600;
-      cursor: pointer;
-      color: #020617;
-      transition: transform .15s ease, box-shadow .15s ease;
-    }
-
-    .input-bar button:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 6px 20px rgba(56,189,248,.35);
-    }
-
-    /* ───────── MOBILE ───────── */
-
-    @media (max-width: 900px) {
-      .app {
-        grid-template-columns: 1fr;
-      }
-
-      .left {
-        display: none;
-      }
-    }
-  </style>
+  <!-- CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-
 <body>
 
-<div class="app">
-
-  <!-- LEFT -->
-  <div class="left">
-    <div class="brand">Almost<span>Me</span></div>
-
-    <div class="avatar-box" id="avatarBox">
-      Aquí va el avatar / video del clon
-    </div>
-
-    <div class="status">
-      <div class="dot"></div>
-      Clon online
-    </div>
-  </div>
-
-  <!-- RIGHT -->
-  <div class="right">
-    <div class="chat-header">
-      Conversación con tu clon digital
-    </div>
-
-    <div class="chat" id="chat">
-      <div class="msg bot">
-        Hola, soy AlmostMe. ¿En qué puedo ayudarte?
+  <div class="app">
+    <header class="header">
+      <div class="avatar">AM</div>
+      <div class="title">
+        <h1>AlmostMe</h1>
+        <span>Clon interactivo</span>
       </div>
-    </div>
+    </header>
 
-    <div class="input-bar">
-      <input id="input" placeholder="Escribí tu mensaje…" />
-      <button id="send">Enviar</button>
-    </div>
+    <main id="chat" class="chat">
+      <div class="msg bot">
+        Hola, soy <strong>AlmostMe</strong>. ¿En qué puedo ayudarte?
+      </div>
+    </main>
+
+    <footer class="input-bar">
+      <input
+        id="userInput"
+        type="text"
+        placeholder="Escribí tu mensaje…"
+        autocomplete="off"
+      />
+      <button id="sendBtn">Enviar</button>
+    </footer>
   </div>
 
-</div>
-
-<script>
-  const chat = document.getElementById("chat");
-  const input = document.getElementById("input");
-  const send = document.getElementById("send");
-
-  function addMessage(text, type) {
-    const div = document.createElement("div");
-    div.className = "msg " + type;
-    div.textContent = text;
-    chat.appendChild(div);
-    chat.scrollTop = chat.scrollHeight;
-  }
-
-  send.onclick = () => {
-    const text = input.value.trim();
-    if (!text) return;
-
-    addMessage(text, "user");
-    input.value = "";
-
-    // Placeholder de respuesta
-    setTimeout(() => {
-      addMessage("Respuesta del clon…", "bot");
-    }, 600);
-  };
-
-  input.addEventListener("keypress", e => {
-    if (e.key === "Enter") send.click();
-  });
-</script>
-
+  <!-- JS -->
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
