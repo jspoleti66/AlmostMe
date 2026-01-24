@@ -1,0 +1,63 @@
+/* Reset básico */
+* {
+  box-sizing: border-box;
+}
+
+/* Fondo general */
+body {
+  margin: 0;
+  height: 100vh;
+  background: #020617;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* Contenedor principal */
+.container {
+  width: 380px;
+  height: 600px;
+  background: #0f172a;
+  border-radius: 18px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Área de mensajes */
+.chat {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+/* Mensajes */
+.message {
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+
+.user-message {
+  text-align: right;
+  color: #e5e7eb;
+}
+
+.bot-message {
+  color: #e5e7eb;
+}
+
+/* vCard de manual */
+.bot-message .vcard {
+  background: #020617;
+  border-radius: 12px;
+  padding: 12px;
+  margin-top: 8px;
+}
+
+.bot-message .vcard a {
+  color: #38bdf8;
+  text-decoration: underline;
+  font-weight: 500;
+}
