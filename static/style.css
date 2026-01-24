@@ -1,62 +1,164 @@
-body {
-  margin: 0;
-  height: 100vh;
-  background: #020617;
-  font-family: system-ui, sans-serif;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  color: #e5e7eb;
+* {
+  box-sizing: border-box;
 }
 
-.container {
-  width: 420px;
-  height: 600px;
-  background: #020617;
-  border: 1px solid #1e293b;
-  border-radius: 12px;
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #0f172a;
+  color: #e5e7eb;
+  height: 100vh;
+}
+
+.app {
   display: flex;
   flex-direction: column;
+  height: 100vh;
+  max-width: 900px;
+  margin: 0 auto;
+  background: #020617;
 }
+
+/* HEADER */
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 1px solid #1e293b;
+  background: #020617;
+}
+
+.avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #2563eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+.title h1 {
+  font-size: 16px;
+  margin: 0;
+}
+
+.title span {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+/* CHAT */
 
 .chat {
   flex: 1;
-  padding: 16px;
+  padding: 20px;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
-.message {
+/* MENSAJES */
+
+.user-message,
+.bot-message {
+  max-width: 70%;
+  padding: 12px 14px;
+  border-radius: 14px;
+  line-height: 1.4;
+  font-size: 14px;
+}
+
+.user-message {
+  align-self: flex-end;
+  background: #2563eb;
+  color: white;
+  border-bottom-right-radius: 4px;
+}
+
+.bot-message {
+  align-self: flex-start;
+  background: #1e293b;
+  color: #e5e7eb;
+  border-bottom-left-radius: 4px;
+}
+
+/* VCARD / TARJETAS */
+
+.vcard {
+  background: #020617;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 14px;
+  margin-top: 6px;
+}
+
+.vcard strong {
+  display: block;
+  font-size: 15px;
+  margin-bottom: 6px;
+}
+
+.vcard span {
+  display: block;
+  font-size: 13px;
+  color: #cbd5f5;
   margin-bottom: 10px;
 }
 
-.user {
-  text-align: right;
-  color: #38bdf8;
+.vcard a {
+  display: inline-block;
+  padding: 8px 12px;
+  background: #2563eb;
+  color: white;
+  text-decoration: none;
+  border-radius: 8px;
+  font-size: 13px;
 }
 
-.bot {
-  text-align: left;
-  color: #a7f3d0;
+.vcard a:hover {
+  background: #1d4ed8;
 }
+
+/* INPUT */
 
 .input-bar {
   display: flex;
+  gap: 10px;
+  padding: 14px;
   border-top: 1px solid #1e293b;
+  background: #020617;
 }
 
-input {
+.input-bar input {
   flex: 1;
-  padding: 12px;
-  background: transparent;
-  border: none;
-  color: white;
-  outline: none;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #334155;
+  background: #020617;
+  color: #e5e7eb;
+  font-size: 14px;
 }
 
-button {
-  padding: 12px 16px;
+.input-bar input:focus {
+  outline: none;
+  border-color: #2563eb;
+}
+
+.input-bar button {
+  padding: 0 18px;
+  border-radius: 10px;
+  border: none;
   background: #2563eb;
   color: white;
-  border: none;
+  font-size: 14px;
   cursor: pointer;
+}
+
+.input-bar button:hover {
+  background: #1d4ed8;
 }
