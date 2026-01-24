@@ -1,4 +1,4 @@
-/* Reset básico */
+/* Reset */
 * {
   box-sizing: border-box;
 }
@@ -20,13 +20,13 @@ body {
   height: 600px;
   background: #0f172a;
   border-radius: 18px;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.45);
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
 
-/* Área de mensajes */
+/* Área de chat */
 .chat {
   flex: 1;
   padding: 16px;
@@ -35,15 +35,18 @@ body {
 
 /* Mensajes */
 .message {
-  margin-bottom: 12px;
-  line-height: 1.4;
+  margin-bottom: 14px;
+  line-height: 1.45;
+  font-size: 14px;
 }
 
+/* Usuario */
 .user-message {
   text-align: right;
   color: #e5e7eb;
 }
 
+/* Bot */
 .bot-message {
   color: #e5e7eb;
 }
@@ -54,10 +57,52 @@ body {
   border-radius: 12px;
   padding: 12px;
   margin-top: 8px;
+  border: 1px solid #1e293b;
+}
+
+.bot-message .vcard-title {
+  font-weight: 600;
+  margin-bottom: 6px;
 }
 
 .bot-message .vcard a {
   color: #38bdf8;
   text-decoration: underline;
   font-weight: 500;
+}
+
+/* Barra de entrada */
+.input-bar {
+  display: flex;
+  padding: 10px;
+  border-top: 1px solid #1e293b;
+  gap: 8px;
+}
+
+.input-bar input {
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: none;
+  outline: none;
+  background: #020617;
+  color: #e5e7eb;
+}
+
+.input-bar input::placeholder {
+  color: #64748b;
+}
+
+.input-bar button {
+  padding: 0 14px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  background: #38bdf8;
+  color: #020617;
+  font-weight: 600;
+}
+
+.input-bar button:hover {
+  background: #0ea5e9;
 }
