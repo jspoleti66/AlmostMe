@@ -1,51 +1,53 @@
-async function sendMessage() {
-  const input = document.getElementById("userInput");
-  const message = input.value.trim();
-  if (!message) return;
-
-  addUserMessage(message);
-  input.value = "";
-
-  const res = await fetch("/chat", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ message })
-  });
-
-  const data = await res.json();
-  addBotMessage(data);
-}
-
-function addUserMessage(text) {
+<script>
   const chat = document.getElementById("chat");
-  const div = document.createElement("div");
-  div.className = "user-message";
-  div.textContent = text;
-  chat.appendChild(div);
-  chat.scrollTop = chat.scrollHeight;
-}
+  const input = document.getElementById("input");
+  const send = document.getElementById("send");
 
-function addBotMessage(response) {
-  const chat = document.getElementById("chat");
-  const div = document.createElement("div");
-  div.className = "bot-message";
-
-  if (response.type === "card") {
-    div.innerHTML = response.content;
-  } else {
-    div.textContent = response.text;
+  function addMessage(text, type) {
+    const div = document.createElement("div");
+    div.className = "msg " + type;
+    div.textContent = text;
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
   }
 
-  chat.appendChild(div);
-  chat.scrollTop = chat.scrollHeight;
-}
+  async function sendMessage() {
+    const text = input.value.trim();
+    if (!text) return;
 
-/* botón */
-document.getElementById("sendBtn")
-  .addEventListener("click", sendMessage);
+    addMessage(text, "user");
+    input.value = "";
 
-/* enter */
-document.getElementById("userInput")
-  .addEventListener("keydown", (e) => {
+    // indicador "pensando"
+    const thinking = document.createElement("div");
+    thinking.className = "msg bot";
+    thinking.textContent = "Pensando…";
+    chat.appendChild(thinking);
+    chat.scrollTop = chat.scrollHeight;
+
+    try {
+      const res = await fetch("/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ message: text })
+      });
+
+      const data = await res.json();
+      thinking.remove();
+      addMessage(data.reply || "Sin respuesta", "bot");
+
+    } catch (err) {
+      thinking.remove();
+      addMessage("Error al conectar con el servidor", "bot");
+      console.error(err);
+    }
+  }
+
+  send.onclick = sendMessage;
+
+  input.addEventListener("keypress", e => {
     if (e.key === "Enter") sendMessage();
   });
+</script>
