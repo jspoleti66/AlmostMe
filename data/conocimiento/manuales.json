@@ -11,7 +11,7 @@
       "format": "pdf",
       "language": "es",
       "url": "https://drive.google.com/file/d/1N2WuundVWbS48J10VC5GmjTvAkRHGZe6/view?usp=drive_link",
-      "link_html": "<a href=\"https://drive.google.com/file/d/1N2WuundVWbS48J10VC5GmjTvAkRHGZe6/view?usp=drive_link\" target=\"_blank\" rel=\"noopener\">📘 Abrir Manual de Piscina</a>",
+      "link_md": "[📘 Abrir Manual de Piscina](https://drive.google.com/file/d/1N2WuundVWbS48J10VC5GmjTvAkRHGZe6/view?usp=drive_link)",
       "priority": 1
     },
     {
@@ -23,7 +23,7 @@
       "format": "pdf",
       "language": "es",
       "url": "/static/manuales/jardineria.pdf",
-      "link_html": "<a href=\"/static/manuales/jardineria.pdf\" target=\"_blank\">🌱 Abrir Manual de Jardinería</a>",
+      "link_md": "[🌱 Abrir Manual de Jardinería](/static/manuales/jardineria.pdf)",
       "priority": 2
     }
   ],
