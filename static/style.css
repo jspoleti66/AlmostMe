@@ -4,41 +4,42 @@
 
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   background: #0f172a;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont;
   color: #e5e7eb;
+  display: flex;
+  justify-content: center;
   height: 100vh;
 }
 
 .app {
+  width: 100%;
+  max-width: 480px;
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  max-width: 900px;
-  margin: 0 auto;
   background: #020617;
+  border-left: 1px solid #1e293b;
+  border-right: 1px solid #1e293b;
 }
 
 /* HEADER */
-
 .header {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 14px 18px;
+  padding: 14px;
   border-bottom: 1px solid #1e293b;
-  background: #020617;
 }
 
 .avatar {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
+  width: 40px;
+  height: 40px;
   background: #2563eb;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
+  color: white;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
 }
 
 .title h1 {
@@ -52,110 +53,86 @@ body {
 }
 
 /* CHAT */
-
 .chat {
   flex: 1;
-  padding: 20px;
+  padding: 16px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 
-/* MENSAJES */
-
-.user-message,
-.bot-message {
-  max-width: 70%;
+/* MESSAGES */
+.msg {
+  max-width: 85%;
   padding: 12px 14px;
   border-radius: 14px;
   line-height: 1.4;
   font-size: 14px;
 }
 
-.user-message {
+.msg.user {
   align-self: flex-end;
   background: #2563eb;
   color: white;
   border-bottom-right-radius: 4px;
 }
 
-.bot-message {
+.msg.bot {
   align-self: flex-start;
   background: #1e293b;
   color: #e5e7eb;
   border-bottom-left-radius: 4px;
 }
 
-/* VCARD / TARJETAS */
-
+/* CARD */
 .vcard {
   background: #020617;
   border: 1px solid #334155;
   border-radius: 12px;
-  padding: 14px;
-  margin-top: 6px;
+  padding: 12px;
 }
 
 .vcard strong {
   display: block;
-  font-size: 15px;
   margin-bottom: 6px;
-}
-
-.vcard span {
-  display: block;
-  font-size: 13px;
-  color: #cbd5f5;
-  margin-bottom: 10px;
 }
 
 .vcard a {
   display: inline-block;
-  padding: 8px 12px;
-  background: #2563eb;
-  color: white;
+  margin-top: 8px;
+  color: #60a5fa;
   text-decoration: none;
-  border-radius: 8px;
-  font-size: 13px;
 }
 
 .vcard a:hover {
-  background: #1d4ed8;
+  text-decoration: underline;
 }
 
 /* INPUT */
-
 .input-bar {
   display: flex;
-  gap: 10px;
-  padding: 14px;
+  gap: 8px;
+  padding: 12px;
   border-top: 1px solid #1e293b;
-  background: #020617;
 }
 
 .input-bar input {
   flex: 1;
-  padding: 12px 14px;
-  border-radius: 10px;
-  border: 1px solid #334155;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: none;
+  outline: none;
   background: #020617;
   color: #e5e7eb;
-  font-size: 14px;
-}
-
-.input-bar input:focus {
-  outline: none;
-  border-color: #2563eb;
 }
 
 .input-bar button {
-  padding: 0 18px;
-  border-radius: 10px;
+  padding: 10px 14px;
+  border-radius: 8px;
   border: none;
   background: #2563eb;
   color: white;
-  font-size: 14px;
   cursor: pointer;
 }
 
