@@ -1,6 +1,6 @@
 import os
 import json
-from flask import Flask, request, jsonify, render_template, session, send_from_directory
+from flask import Flask, request, jsonify, render_template, session
 from datetime import timedelta
 
 from azure.ai.inference import ChatCompletionsClient
@@ -11,7 +11,7 @@ from azure.core.credentials import AzureKeyCredential
 # APP
 # =====================================================
 
-app = Flask(__name__, static_folder="static")
+app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "almostme_secret")
 app.permanent_session_lifetime = timedelta(minutes=30)
 
@@ -102,9 +102,7 @@ def consultar_modelo(historial, mensaje_usuario):
         credential=AzureKeyCredential(token),
     )
 
-    mensajes = [
-        SystemMessage(content=construir_contexto_global())
-    ]
+    mensajes = [SystemMessage(content=construir_contexto_global())]
 
     for msg in historial[-6:]:
         if msg["role"] == "user":
@@ -140,11 +138,12 @@ def chat():
     mensaje = data.get("message", "").strip()
 
     if not mensaje:
-        return jsonify({"type": "text", "text": "Decime."})
+        return jsonify({
+            "type": "text",
+            "content": "Decime."
+        })
 
     historial = session.get("historial", [])
-
-    print("MENSAJE:", mensaje)
 
     respuesta = consultar_modelo(historial, mensaje)
 
@@ -152,12 +151,23 @@ def chat():
     historial.append({"role": "assistant", "content": respuesta})
     session["historial"] = historial[-12:]
 
-    return jsonify({"type": "text", "text": respuesta})
+    # 🔑 DETECCIÓN DE VCARD / HTML
+    if respuesta.strip().startswith("<div") and "vcard" in respuesta:
+        return jsonify({
+            "type": "card",
+            "content": respuesta
+        })
+
+    # TEXTO NORMAL
+    return jsonify({
+        "type": "text",
+        "content": respuesta
+    })
 
 # =====================================================
-# RUN (Render)
+# RUN
 # =====================================================
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))
+    port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
