@@ -1,108 +1,62 @@
-/* Reset */
-* {
-  box-sizing: border-box;
-}
-
-/* Fondo general */
 body {
   margin: 0;
   height: 100vh;
   background: #020617;
+  font-family: system-ui, sans-serif;
   display: flex;
   justify-content: center;
   align-items: center;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  color: #e5e7eb;
 }
 
-/* Contenedor principal */
 .container {
-  width: 380px;
+  width: 420px;
   height: 600px;
-  background: #0f172a;
-  border-radius: 18px;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.45);
+  background: #020617;
+  border: 1px solid #1e293b;
+  border-radius: 12px;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
 }
 
-/* Área de chat */
 .chat {
   flex: 1;
   padding: 16px;
   overflow-y: auto;
 }
 
-/* Mensajes */
 .message {
-  margin-bottom: 14px;
-  line-height: 1.45;
-  font-size: 14px;
+  margin-bottom: 10px;
 }
 
-/* Usuario */
-.user-message {
+.user {
   text-align: right;
-  color: #e5e7eb;
-}
-
-/* Bot */
-.bot-message {
-  color: #e5e7eb;
-}
-
-/* vCard de manual */
-.bot-message .vcard {
-  background: #020617;
-  border-radius: 12px;
-  padding: 12px;
-  margin-top: 8px;
-  border: 1px solid #1e293b;
-}
-
-.bot-message .vcard-title {
-  font-weight: 600;
-  margin-bottom: 6px;
-}
-
-.bot-message .vcard a {
   color: #38bdf8;
-  text-decoration: underline;
-  font-weight: 500;
 }
 
-/* Barra de entrada */
+.bot {
+  text-align: left;
+  color: #a7f3d0;
+}
+
 .input-bar {
   display: flex;
-  padding: 10px;
   border-top: 1px solid #1e293b;
-  gap: 8px;
 }
 
-.input-bar input {
+input {
   flex: 1;
-  padding: 10px 12px;
-  border-radius: 10px;
+  padding: 12px;
+  background: transparent;
   border: none;
+  color: white;
   outline: none;
-  background: #020617;
-  color: #e5e7eb;
 }
 
-.input-bar input::placeholder {
-  color: #64748b;
-}
-
-.input-bar button {
-  padding: 0 14px;
-  border-radius: 10px;
+button {
+  padding: 12px 16px;
+  background: #2563eb;
+  color: white;
   border: none;
   cursor: pointer;
-  background: #38bdf8;
-  color: #020617;
-  font-weight: 600;
-}
-
-.input-bar button:hover {
-  background: #0ea5e9;
 }
