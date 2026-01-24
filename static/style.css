@@ -1,141 +1,30 @@
-* {
-  box-sizing: border-box;
+/* TYPING ANIMATION */
+
+.typing {
+  font-style: italic;
+  opacity: 0.7;
 }
 
-body {
-  margin: 0;
-  background: #0f172a;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont;
-  color: #e5e7eb;
-  display: flex;
-  justify-content: center;
-  height: 100vh;
+.dots span {
+  animation: blink 1.4s infinite both;
 }
 
-.app {
-  width: 100%;
-  max-width: 480px;
-  display: flex;
-  flex-direction: column;
-  background: #020617;
-  border-left: 1px solid #1e293b;
-  border-right: 1px solid #1e293b;
+.dots span:nth-child(2) {
+  animation-delay: .2s;
 }
 
-/* HEADER */
-.header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 14px;
-  border-bottom: 1px solid #1e293b;
+.dots span:nth-child(3) {
+  animation-delay: .4s;
 }
 
-.avatar {
-  width: 40px;
-  height: 40px;
-  background: #2563eb;
-  color: white;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  font-weight: 700;
-}
-
-.title h1 {
-  font-size: 16px;
-  margin: 0;
-}
-
-.title span {
-  font-size: 12px;
-  color: #94a3b8;
-}
-
-/* CHAT */
-.chat {
-  flex: 1;
-  padding: 16px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-/* MESSAGES */
-.msg {
-  max-width: 85%;
-  padding: 12px 14px;
-  border-radius: 14px;
-  line-height: 1.4;
-  font-size: 14px;
-}
-
-.msg.user {
-  align-self: flex-end;
-  background: #2563eb;
-  color: white;
-  border-bottom-right-radius: 4px;
-}
-
-.msg.bot {
-  align-self: flex-start;
-  background: #1e293b;
-  color: #e5e7eb;
-  border-bottom-left-radius: 4px;
-}
-
-/* CARD */
-.vcard {
-  background: #020617;
-  border: 1px solid #334155;
-  border-radius: 12px;
-  padding: 12px;
-}
-
-.vcard strong {
-  display: block;
-  margin-bottom: 6px;
-}
-
-.vcard a {
-  display: inline-block;
-  margin-top: 8px;
-  color: #60a5fa;
-  text-decoration: none;
-}
-
-.vcard a:hover {
-  text-decoration: underline;
-}
-
-/* INPUT */
-.input-bar {
-  display: flex;
-  gap: 8px;
-  padding: 12px;
-  border-top: 1px solid #1e293b;
-}
-
-.input-bar input {
-  flex: 1;
-  padding: 10px 12px;
-  border-radius: 8px;
-  border: none;
-  outline: none;
-  background: #020617;
-  color: #e5e7eb;
-}
-
-.input-bar button {
-  padding: 10px 14px;
-  border-radius: 8px;
-  border: none;
-  background: #2563eb;
-  color: white;
-  cursor: pointer;
-}
-
-.input-bar button:hover {
-  background: #1d4ed8;
+@keyframes blink {
+  0% {
+    opacity: .2;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: .2;
+  }
 }
