@@ -22,6 +22,7 @@ function addUserMessage(text) {
   div.className = "user-message";
   div.textContent = text;
   chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
 }
 
 function addBotMessage(response) {
@@ -29,12 +30,22 @@ function addBotMessage(response) {
   const div = document.createElement("div");
   div.className = "bot-message";
 
-  // 👇 ACÁ ESTÁ LA CLAVE
   if (response.type === "card") {
     div.innerHTML = response.content;
   } else {
-    div.textContent = response.content;
+    div.textContent = response.text;
   }
 
   chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
 }
+
+/* botón */
+document.getElementById("sendBtn")
+  .addEventListener("click", sendMessage);
+
+/* enter */
+document.getElementById("userInput")
+  .addEventListener("keydown", (e) => {
+    if (e.key === "Enter") sendMessage();
+  });
