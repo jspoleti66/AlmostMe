@@ -1,59 +1,54 @@
 * {
   box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: "Segoe UI", system-ui, sans-serif;
 }
 
 body {
-  margin: 0;
-  background: #0f172a;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont;
-  color: #e5e7eb;
+  background: linear-gradient(135deg, #020617, #0f172a);
+  height: 100vh;
   display: flex;
   justify-content: center;
-  height: 100vh;
+  align-items: center;
 }
 
-.app {
+/* App */
+
+.chat-app {
   width: 100%;
   max-width: 480px;
+  height: 90vh;
+  background: #020617;
+  border-radius: 16px;
   display: flex;
   flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0,0,0,.6);
+  overflow: hidden;
+}
+
+/* Header */
+
+.chat-header {
   background: #020617;
-  border-left: 1px solid #1e293b;
-  border-right: 1px solid #1e293b;
-}
-
-/* HEADER */
-.header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 14px;
   border-bottom: 1px solid #1e293b;
+  padding: 16px;
+  text-align: center;
 }
 
-.avatar {
-  width: 40px;
-  height: 40px;
-  background: #2563eb;
-  color: white;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  font-weight: 700;
+.chat-header h1 {
+  color: #38bdf8;
+  font-size: 20px;
 }
 
-.title h1 {
-  font-size: 16px;
-  margin: 0;
-}
-
-.title span {
-  font-size: 12px;
+.chat-header span {
   color: #94a3b8;
+  font-size: 13px;
 }
 
-/* CHAT */
-.chat {
+/* Body */
+
+.chat-body {
   flex: 1;
   padding: 16px;
   overflow-y: auto;
@@ -62,111 +57,112 @@ body {
   gap: 12px;
 }
 
-/* MESSAGES */
-.msg {
-  max-width: 85%;
+/* Messages */
+
+.message {
+  max-width: 80%;
   padding: 12px 14px;
   border-radius: 14px;
   line-height: 1.4;
   font-size: 14px;
+  word-wrap: break-word;
 }
 
-.msg.user {
-  align-self: flex-end;
+/* User */
+
+.user {
   background: #2563eb;
   color: white;
+  align-self: flex-end;
   border-bottom-right-radius: 4px;
 }
 
-.msg.bot {
-  align-self: flex-start;
-  background: #1e293b;
+/* Bot */
+
+.bot {
+  background: #020617;
   color: #e5e7eb;
+  border: 1px solid #1e293b;
+  align-self: flex-start;
   border-bottom-left-radius: 4px;
 }
 
-/* CARD */
+/* Input */
+
+.chat-input {
+  display: flex;
+  padding: 12px;
+  border-top: 1px solid #1e293b;
+  background: #020617;
+}
+
+.chat-input input {
+  flex: 1;
+  background: #020617;
+  border: 1px solid #1e293b;
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: white;
+  outline: none;
+}
+
+.chat-input input::placeholder {
+  color: #64748b;
+}
+
+.chat-input button {
+  margin-left: 8px;
+  background: #38bdf8;
+  border: none;
+  color: #020617;
+  padding: 0 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.chat-input button:hover {
+  opacity: .9;
+}
+
+/* VCARD */
+
 .vcard {
   background: #020617;
-  border: 1px solid #334155;
+  border: 1px solid #38bdf8;
+  padding: 14px;
   border-radius: 12px;
-  padding: 12px;
+  margin-top: 6px;
 }
 
 .vcard strong {
+  color: #38bdf8;
+  font-size: 15px;
+}
+
+.vcard span {
+  color: #cbd5f5;
   display: block;
-  margin-bottom: 6px;
+  margin: 6px 0;
 }
 
 .vcard a {
-  display: inline-block;
-  margin-top: 8px;
-  color: #60a5fa;
+  color: #38bdf8;
   text-decoration: none;
+  font-weight: 600;
 }
 
 .vcard a:hover {
   text-decoration: underline;
 }
 
-/* INPUT */
-.input-bar {
-  display: flex;
-  gap: 8px;
-  padding: 12px;
-  border-top: 1px solid #1e293b;
+/* Scroll */
+
+.chat-body::-webkit-scrollbar {
+  width: 6px;
 }
 
-.input-bar input {
-  flex: 1;
-  padding: 10px 12px;
-  border-radius: 8px;
-  border: none;
-  outline: none;
-  background: #020617;
-  color: #e5e7eb;
+.chat-body::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 3px;
 }
-
-.input-bar button {
-  padding: 10px 14px;
-  border-radius: 8px;
-  border: none;
-  background: #2563eb;
-  color: white;
-  cursor: pointer;
-}
-
-.input-bar button:hover {
-  background: #1d4ed8;
-}
-/* TYPING ANIMATION */
-
-.typing {
-  font-style: italic;
-  opacity: 0.7;
-}
-
-.dots span {
-  animation: blink 1.4s infinite both;
-}
-
-.dots span:nth-child(2) {
-  animation-delay: .2s;
-}
-
-.dots span:nth-child(3) {
-  animation-delay: .4s;
-}
-
-@keyframes blink {
-  0% {
-    opacity: .2;
-  }
-  20% {
-    opacity: 1;
-  }
-  100% {
-    opacity: .2;
-  }
-}
-
