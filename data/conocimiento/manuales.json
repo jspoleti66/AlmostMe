@@ -9,10 +9,10 @@
       "url": "https://drive.google.com/file/d/1N2WuundVWbS48J10VC5GmjTvAkRHGZe6/view?usp=drive_link"
     },
     {
-      "id": "jardineria",
-      "title": "Manual de Jardinería",
-      "summary": "Instrucciones para el cuidado general del jardín.",
-      "url": "/static/manuales/jardineria.pdf"
+      "id": "auto,peugeot 2008",
+      "title": "Manual Peugeot 2008",
+      "summary": "Este documento presenta la información y las recomendaciones esenciales que le permiten familiarizarse con el vehículo de forma segura.",
+      "url": "/static/manuales/peugeot2008.pdf"
     }
   ]
 }
