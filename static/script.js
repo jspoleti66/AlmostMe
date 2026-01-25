@@ -1,105 +1,64 @@
-const chat = document.getElementById("chat");
 const input = document.getElementById("userInput");
-const sendBtn = document.getElementById("sendBtn");
+const button = document.getElementById("sendBtn");
+const chat = document.getElementById("chat");
 
-let typingIndicator = null;
-let isSending = false;
+/* Send */
 
-sendBtn.addEventListener("click", sendMessage);
-input.addEventListener("keydown", e => {
+button.addEventListener("click", sendMessage);
+input.addEventListener("keypress", e => {
   if (e.key === "Enter") sendMessage();
 });
 
+/* Main */
+
 async function sendMessage() {
-  if (isSending) return;
 
   const message = input.value.trim();
   if (!message) return;
 
-  isSending = true;
-
-  addMessage(message, "user");
+  addUser(message);
   input.value = "";
 
-  showTyping();
+  const res = await fetch("/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message })
+  });
 
-  try {
-    const res = await fetch("/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message })
-    });
+  const data = await res.json();
 
-    const data = await res.json();
-
-    hideTyping();
-
-    if (data.type === "card") {
-      addMessageHTML(data.content, "bot");
-    } else {
-      addMessage(data.content, "bot");
-    }
-
-  } catch (err) {
-    hideTyping();
-    addMessage("⚠️ Error de conexión", "bot");
-  }
-
-  isSending = false;
+  addBot(data);
 }
 
-/* ============================
-   MENSAJES
-============================ */
+/* UI */
 
-function addMessage(text, type) {
+function addUser(text) {
+
   const div = document.createElement("div");
-  div.className = "msg " + type;
+  div.className = "message user";
   div.textContent = text;
 
   chat.appendChild(div);
-  scrollDown();
+  scroll();
 }
 
-function addMessageHTML(html, type) {
+function addBot(data) {
+
   const div = document.createElement("div");
-  div.className = "msg " + type;
-  div.innerHTML = html;
+  div.className = "message bot";
+
+  if (data.type === "card") {
+    div.innerHTML = data.content;
+  } else {
+    div.textContent = data.content;
+  }
 
   chat.appendChild(div);
-  scrollDown();
+  scroll();
 }
 
-/* ============================
-   TYPING
-============================ */
+/* Scroll */
 
-function showTyping() {
-  if (typingIndicator) return;
-
-  typingIndicator = document.createElement("div");
-  typingIndicator.className = "msg bot typing";
-  typingIndicator.innerHTML = `
-    <span class="dots">
-      <span>.</span><span>.</span><span>.</span>
-    </span>
-  `;
-
-  chat.appendChild(typingIndicator);
-  scrollDown();
-}
-
-function hideTyping() {
-  if (typingIndicator) {
-    typingIndicator.remove();
-    typingIndicator = null;
-  }
-}
-
-/* ============================
-   UX
-============================ */
-
-function scrollDown() {
+function scroll() {
   chat.scrollTop = chat.scrollHeight;
 }
