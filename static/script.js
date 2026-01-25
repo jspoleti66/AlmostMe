@@ -2,9 +2,12 @@ const input = document.getElementById("userInput");
 const button = document.getElementById("sendBtn");
 const chat = document.getElementById("chat");
 
-/* Send */
+let typingDiv = null;
+
+/* Events */
 
 button.addEventListener("click", sendMessage);
+
 input.addEventListener("keypress", e => {
   if (e.key === "Enter") sendMessage();
 });
@@ -19,6 +22,8 @@ async function sendMessage() {
   addUser(message);
   input.value = "";
 
+  showTyping();
+
   const res = await fetch("/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -27,6 +32,7 @@ async function sendMessage() {
 
   const data = await res.json();
 
+  hideTyping();
   addBot(data);
 }
 
@@ -55,6 +61,26 @@ function addBot(data) {
 
   chat.appendChild(div);
   scroll();
+}
+
+/* Typing */
+
+function showTyping() {
+
+  typingDiv = document.createElement("div");
+  typingDiv.className = "message bot typing";
+  typingDiv.textContent = "AlmostMe está escribiendo…";
+
+  chat.appendChild(typingDiv);
+  scroll();
+}
+
+function hideTyping() {
+
+  if (typingDiv) {
+    typingDiv.remove();
+    typingDiv = null;
+  }
 }
 
 /* Scroll */
