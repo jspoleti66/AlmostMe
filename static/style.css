@@ -166,3 +166,19 @@ body {
   background: #1e293b;
   border-radius: 3px;
 }
+/* Typing indicator */
+
+.typing {
+  font-size: 13px;
+  color: #94a3b8;
+  font-style: italic;
+  margin-left: 6px;
+  animation: blink 1.4s infinite both;
+}
+
+@keyframes blink {
+  0% { opacity: .2 }
+  20% { opacity: 1 }
+  100% { opacity: .2 }
+}
+
