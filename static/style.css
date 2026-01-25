@@ -1,3 +1,63 @@
+*{
+  box-sizing:border-box;
+  margin:0;
+  padding:0;
+  font-family:system-ui, sans-serif;
+}
+
+/* ===== BODY ===== */
+
+body{
+  background:#020617;
+  color:#e5e7eb;
+  height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+
+/* ===== APP ===== */
+
+.app{
+  width:100%;
+  max-width:480px;
+  height:100vh;
+  background:#020617;
+  display:flex;
+  flex-direction:column;
+  border-left:1px solid #1e293b;
+  border-right:1px solid #1e293b;
+}
+
+/* ===== HEADER ===== */
+
+.header{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  padding:12px;
+  border-bottom:1px solid #1e293b;
+}
+
+.main-logo{
+  height:40px;
+  width:auto;
+  display:block;
+}
+
+/* ===== CHAT ===== */
+
+.chat{
+  flex:1;
+  overflow-y:auto;
+  padding:15px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+
+/* ===== MENSAJES ===== */
+
 .msg{
   max-width:80%;
   padding:10px 14px;
@@ -7,18 +67,25 @@
   font-size:14px;
 }
 
+/* Usuario */
+
 .user{
   align-self:flex-end;
   background:#2563eb;
   color:white;
 }
 
+/* Bot */
+
 .bot{
   align-self:flex-start;
   background:#0f172a;
   border:1px solid #1e293b;
-  color:#e5e7eb; /* IMPORTANTE */
+  color:#e5e7eb;
 }
+
+/* ===== TYPING ===== */
+
 .typing{
   display:flex;
   gap:4px;
@@ -32,6 +99,7 @@
 .typing span:nth-child(2){
   animation-delay: .2s;
 }
+
 .typing span:nth-child(3){
   animation-delay: .4s;
 }
@@ -42,3 +110,52 @@
   100%{opacity:.2}
 }
 
+/* ===== INPUT ===== */
+
+.input-area{
+  display:flex;
+  padding:10px;
+  gap:8px;
+  border-top:1px solid #1e293b;
+}
+
+.input-area input{
+  flex:1;
+  padding:10px;
+  border-radius:8px;
+  border:none;
+  background:#020617;
+  color:white;
+  border:1px solid #1e293b;
+  outline:none;
+}
+
+.input-area input::placeholder{
+  color:#64748b;
+}
+
+.input-area button{
+  padding:10px 16px;
+  border:none;
+  border-radius:8px;
+  background:#2563eb;
+  color:white;
+  cursor:pointer;
+  transition:0.2s;
+}
+
+.input-area button:hover{
+  background:#1d4ed8;
+}
+
+/* ===== DESKTOP ===== */
+
+@media (min-width:768px){
+
+  .app{
+    height:90vh;
+    border-radius:16px;
+    box-shadow:0 0 40px rgba(0,0,0,0.6);
+  }
+
+}
