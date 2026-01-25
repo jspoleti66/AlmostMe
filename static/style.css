@@ -1,123 +1,215 @@
-/* ==========================
-   CONTENEDOR PRINCIPAL
-   ========================== */
-body {
+* {
+  box-sizing: border-box;
   margin: 0;
-  font-family: 'Segoe UI', sans-serif;
-  background: #020617;
-  color: #eee;
+  padding: 0;
+  font-family: "Segoe UI", system-ui, sans-serif;
+}
+
+body {
+  background: linear-gradient(135deg, #020617, #0f172a);
+  height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
 }
 
-.container {
+/* App */
+
+.chat-app {
   width: 100%;
   max-width: 480px;
-  background: #0b0f1a;
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  height: 90vh;
+  background: #020617;
+  border-radius: 16px;
   display: flex;
   flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0,0,0,.6);
   overflow: hidden;
 }
 
-/* ==========================
-   CHAT
-   ========================== */
-.chat {
+/* Header */
+
+.chat-header {
+  background: #020617;
+  border-bottom: 1px solid #1e293b;
+  padding: 16px;
+  text-align: center;
+}
+
+.chat-header h1 {
+  color: #38bdf8;
+  font-size: 20px;
+}
+
+.chat-header span {
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+/* Body */
+
+.chat-body {
   flex: 1;
   padding: 16px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
 }
 
-/* ==========================
-   MENSAJES
-   ========================== */
-.user-message {
+/* Messages */
+
+.message {
+  max-width: 80%;
+  padding: 12px 14px;
+  border-radius: 14px;
+  line-height: 1.4;
+  font-size: 14px;
+  word-wrap: break-word;
+}
+
+/* User */
+
+.user {
+  background: #2563eb;
+  color: white;
   align-self: flex-end;
-  background: #1f2233;
-  padding: 8px 12px;
-  border-radius: 16px;
-  max-width: 80%;
+  border-bottom-right-radius: 4px;
 }
 
-.bot-message {
+/* Bot */
+
+.bot {
+  background: #020617;
+  color: #e5e7eb;
+  border: 1px solid #1e293b;
   align-self: flex-start;
-  background: #2b2f44;
-  padding: 8px 12px;
-  border-radius: 16px;
-  max-width: 80%;
+  border-bottom-left-radius: 4px;
 }
 
-/* ==========================
-   TIPING INDICATOR (...)
-   ========================== */
-.bot-message.typing {
-  font-style: italic;
-  color: #999;
-  animation: blink 1s steps(1, start) infinite;
-}
+/* Input */
 
-/* ==========================
-   VCARD
-   ========================== */
-.vcard {
-  background: #1e2233;
+.chat-input {
+  display: flex;
   padding: 12px;
+  border-top: 1px solid #1e293b;
+  background: #020617;
+}
+
+.chat-input input {
+  flex: 1;
+  background: #020617;
+  border: 1px solid #1e293b;
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: white;
+  outline: none;
+}
+
+.chat-input input::placeholder {
+  color: #64748b;
+}
+
+.chat-input button {
+  margin-left: 8px;
+  background: #38bdf8;
+  border: none;
+  color: #020617;
+  padding: 0 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.chat-input button:hover {
+  opacity: .9;
+}
+
+/* VCARD */
+
+.vcard {
+  background: #020617;
+  border: 1px solid #38bdf8;
+  padding: 14px;
   border-radius: 12px;
-  border: 1px solid #444;
+  margin-top: 6px;
+}
+
+.vcard strong {
+  color: #38bdf8;
+  font-size: 15px;
+}
+
+.vcard span {
+  color: #cbd5f5;
+  display: block;
+  margin: 6px 0;
 }
 
 .vcard a {
-  color: #4fc3f7;
+  color: #38bdf8;
   text-decoration: none;
+  font-weight: 600;
 }
 
 .vcard a:hover {
   text-decoration: underline;
 }
 
-/* ==========================
-   INPUT
-   ========================== */
-.input-bar {
-  display: flex;
-  border-top: 1px solid #333;
+/* Scroll */
+
+.chat-body::-webkit-scrollbar {
+  width: 6px;
 }
 
-#userInput {
-  flex: 1;
-  padding: 12px;
-  border: none;
-  outline: none;
-  background: #0b0f1a;
-  color: #eee;
-  font-size: 16px;
+.chat-body::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 3px;
+}
+/* Typing indicator */
+
+.typing {
+  font-size: 13px;
+  color: #94a3b8;
+  font-style: italic;
+  margin-left: 6px;
+  animation: blink 1.4s infinite both;
 }
 
-#sendBtn {
-  padding: 12px 20px;
-  background: #4fc3f7;
-  border: none;
-  cursor: pointer;
-  font-weight: bold;
-  color: #020617;
-  transition: 0.2s;
-}
-
-#sendBtn:hover {
-  background: #3aa0d9;
-}
-
-/* ==========================
-   ANIMACIONES
-   ========================== */
 @keyframes blink {
-  0%, 50%, 100% { opacity: 1; }
-  25%, 75% { opacity: 0; }
+  0% { opacity: .2 }
+  20% { opacity: 1 }
+  100% { opacity: .2 }
+}
+
+/* Mobile */
+
+@media (max-width: 600px) {
+
+  body {
+    align-items: stretch;
+  }
+
+  .chat-app {
+    height: 100vh;
+    max-width: 100%;
+    border-radius: 0;
+  }
+
+  .chat-header {
+    padding: 12px;
+  }
+
+  .chat-body {
+    padding: 12px;
+  }
+
+  .chat-input input {
+    font-size: 16px;
+  }
+
+  .chat-input button {
+    padding: 0 12px;
+  }
+
 }
