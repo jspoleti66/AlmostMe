@@ -182,3 +182,36 @@ body {
   100% { opacity: .2 }
 }
 
+/* Mobile */
+
+@media (max-width: 600px) {
+
+  body {
+    align-items: stretch;
+  }
+
+  .chat-app {
+    height: 100vh;
+    max-width: 100%;
+    border-radius: 0;
+  }
+
+  .chat-header {
+    padding: 12px;
+  }
+
+  .chat-body {
+    padding: 12px;
+  }
+
+  .chat-input input {
+    font-size: 16px;
+  }
+
+  .chat-input button {
+    padding: 0 12px;
+  }
+
+}
+
+
