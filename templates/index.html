@@ -4,35 +4,43 @@
   <meta charset="UTF-8" />
   <title>AlmostMe</title>
 
+  <!-- Responsive -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+  <!-- CSS -->
   <link rel="stylesheet" href="/static/style.css">
 </head>
 
 <body>
 
-<div class="chat-app">
-
-  <header class="chat-header">
-    <h1>AlmostMe</h1>
-    <span>Clon digital</span>
+  <!-- HEADER -->
+  <header class="app-header">
+    <img 
+      src="/static/images/logo.png"
+      alt="AlmostMe"
+      class="app-logo"
+    >
   </header>
 
-  <main id="chat" class="chat-body"></main>
+  <!-- CHAT -->
+  <main class="container">
 
-  <footer class="chat-input">
-    <input
-      id="userInput"
-      type="text"
-      placeholder="Escribí tu mensaje…"
-      autocomplete="off"
-    />
-    <button id="sendBtn">Enviar</button>
-  </footer>
+    <div id="chat" class="chat"></div>
 
-</div>
+    <div class="input-bar">
+      <input
+        id="userInput"
+        type="text"
+        placeholder="Escribí tu mensaje…"
+        autocomplete="off"
+      />
+      <button id="sendBtn">Enviar</button>
+    </div>
 
-<script src="/static/script.js"></script>
+  </main>
+
+  <!-- JS -->
+  <script src="/static/script.js"></script>
 
 </body>
 </html>
