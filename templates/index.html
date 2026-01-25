@@ -1,46 +1,27 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <title>AlmostMe</title>
-
-  <!-- Responsive -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <!-- CSS -->
-  <link rel="stylesheet" href="/static/style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AlmostMe – Clon Interactivo</title>
+<link rel="stylesheet" href="/static/style.css">
 </head>
-
 <body>
 
-  <!-- HEADER -->
-  <header class="app-header">
-    <img 
-      src="/static/images/logo.png"
-      alt="AlmostMe"
-      class="app-logo"
-    >
+<div class="app">
+  <header class="header">
+    <img src="/static/images/logo.png" class="logo">
+    <h1>AlmostMe</h1>
   </header>
 
-  <!-- CHAT -->
-  <main class="container">
+  <main id="chat" class="chat"></main>
 
-    <div id="chat" class="chat"></div>
+  <form id="form" class="input-area">
+    <input id="input" type="text" placeholder="Escribí tu mensaje..." autocomplete="off">
+    <button type="submit">Enviar</button>
+  </form>
+</div>
 
-    <div class="input-bar">
-      <input
-        id="userInput"
-        type="text"
-        placeholder="Escribí tu mensaje…"
-        autocomplete="off"
-      />
-      <button id="sendBtn">Enviar</button>
-    </div>
-
-  </main>
-
-  <!-- JS -->
-  <script src="/static/script.js"></script>
-
+<script src="/static/script.js"></script>
 </body>
 </html>
