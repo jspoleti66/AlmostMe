@@ -4,6 +4,10 @@ const input = document.getElementById("input");
 
 let typingDiv = null;
 
+/* ===============================
+   Agregar mensaje al chat
+================================ */
+
 function addMessage(text, type){
 
   if(!text || text.trim() === ""){
@@ -13,12 +17,16 @@ function addMessage(text, type){
   const div = document.createElement("div");
   div.className = `msg ${type}`;
 
-  // Permite saltos de línea
-  div.innerHTML = text.replace(/\n/g,"<br>");
+  // Soporta saltos de línea
+  div.innerHTML = text.replace(/\n/g, "<br>");
 
   chat.appendChild(div);
   scrollBottom();
 }
+
+/* ===============================
+   Mostrar "escribiendo..."
+================================ */
 
 function showTyping(){
 
@@ -35,48 +43,72 @@ function showTyping(){
   scrollBottom();
 }
 
+/* ===============================
+   Ocultar "escribiendo..."
+================================ */
+
 function hideTyping(){
+
   if(typingDiv){
     typingDiv.remove();
     typingDiv = null;
   }
 }
 
+/* ===============================
+   Scroll automático
+================================ */
+
 function scrollBottom(){
   chat.scrollTop = chat.scrollHeight;
 }
 
+/* ===============================
+   Envío del formulario
+================================ */
+
 form.addEventListener("submit", async (e)=>{
+
   e.preventDefault();
 
   const text = input.value.trim();
+
   if(!text) return;
 
-  addMessage(text,"user");
-  input.value="";
+  // Mensaje del usuario
+  addMessage(text, "user");
+
+  input.value = "";
 
   showTyping();
 
   try{
 
     const res = await fetch("/chat",{
-      method:"POST",
+      method: "POST",
       headers:{
-        "Content-Type":"application/json"
+        "Content-Type": "application/json"
       },
-      body:JSON.stringify({ message: text })
+      body: JSON.stringify({
+        message: text
+      })
     });
 
     const data = await res.json();
 
     hideTyping();
 
-    addMessage(data.response || "Sin respuesta","bot");
-
-  }catch(err){
-
-    hideTyping();
-    addMessage("Error de conexión","bot");
+    // 🔑 IMPORTANTE: leer "content"
+    addMessage(data.content || "Sin respuesta", "bot");
 
   }
+  catch(err){
+
+    console.error("Error:", err);
+
+    hideTyping();
+
+    addMessage("Error de conexión con el servidor", "bot");
+  }
+
 });
