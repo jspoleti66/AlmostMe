@@ -1,76 +1,90 @@
-// ==============================
-// FUNCIÓN PRINCIPAL DE ENVÍO
-// ==============================
+const input = document.getElementById("userInput");
+const button = document.getElementById("sendBtn");
+const chat = document.getElementById("chat");
+
+let typingDiv = null;
+
+/* Events */
+
+button.addEventListener("click", sendMessage);
+
+input.addEventListener("keypress", e => {
+  if (e.key === "Enter") sendMessage();
+});
+
+/* Main */
+
 async function sendMessage() {
-  const input = document.getElementById("userInput");
+
   const message = input.value.trim();
   if (!message) return;
 
-  addUserMessage(message);
+  addUser(message);
   input.value = "";
 
-  // ==========================
-  // MOSTRAR “typing” (...)
-  // ==========================
-  const chat = document.getElementById("chat");
-  const typingDiv = document.createElement("div");
-  typingDiv.className = "bot-message typing";
-  typingDiv.textContent = "...";
-  chat.appendChild(typingDiv);
-  chat.scrollTop = chat.scrollHeight;
+  showTyping();
 
-  try {
-    const res = await fetch("/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message })
-    });
+  const res = await fetch("/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message })
+  });
 
-    const data = await res.json();
+  const data = await res.json();
 
-    // ==========================
-    // REEMPLAZAR TIPO DE MENSAJE
-    // ==========================
-    typingDiv.remove();
-    addBotMessage(data);
-
-  } catch (err) {
-    typingDiv.remove();
-    addBotMessage({ type: "text", content: "Error de conexión." });
-  }
+  hideTyping();
+  addBot(data);
 }
 
-// ==============================
-// FUNCIONES AUXILIARES
-// ==============================
-function addUserMessage(text) {
-  const chat = document.getElementById("chat");
+/* UI */
+
+function addUser(text) {
+
   const div = document.createElement("div");
-  div.className = "user-message";
+  div.className = "message user";
   div.textContent = text;
+
   chat.appendChild(div);
-  chat.scrollTop = chat.scrollHeight;
+  scroll();
 }
 
-function addBotMessage(response) {
-  const chat = document.getElementById("chat");
-  const div = document.createElement("div");
-  div.className = "bot-message";
+function addBot(data) {
 
-  if (response.type === "card") {
-    div.innerHTML = response.content;
+  const div = document.createElement("div");
+  div.className = "message bot";
+
+  if (data.type === "card") {
+    div.innerHTML = data.content;
   } else {
-    div.textContent = response.content;
+    div.textContent = data.content;
   }
 
   chat.appendChild(div);
-  chat.scrollTop = chat.scrollHeight;
+  scroll();
 }
 
-// ==============================
-// EVENTOS
-// ==============================
-document.getElementById("sendBtn").addEventListener("click", sendMessage);
-document.getElementById("userInput").addEventListener("keypress", function(e) {
-  if (e.key === "Enter") sendMessage();
-});
+/* Typing */
+
+function showTyping() {
+
+  typingDiv = document.createElement("div");
+  typingDiv.className = "message bot typing";
+  typingDiv.textContent = "AlmostMe está escribiendo…";
+
+  chat.appendChild(typingDiv);
+  scroll();
+}
+
+function hideTyping() {
+
+  if (typingDiv) {
+    typingDiv.remove();
+    typingDiv = null;
+  }
+}
+
+/* Scroll */
+
+function scroll() {
+  chat.scrollTop = chat.scrollHeight;
+}
