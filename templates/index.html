@@ -4,40 +4,35 @@
   <meta charset="UTF-8" />
   <title>AlmostMe</title>
 
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- CSS -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="/static/style.css">
 </head>
+
 <body>
 
-  <div class="app">
-    <header class="header">
-      <div class="avatar">AM</div>
-      <div class="title">
-        <h1>AlmostMe</h1>
-        <span>Clon interactivo</span>
-      </div>
-    </header>
+<div class="chat-app">
 
-    <main id="chat" class="chat">
-      <div class="msg bot">
-        Hola, soy <strong>AlmostMe</strong>. ¿En qué puedo ayudarte?
-      </div>
-    </main>
+  <header class="chat-header">
+    <h1>AlmostMe</h1>
+    <span>Clon digital</span>
+  </header>
 
-    <footer class="input-bar">
-      <input
-        id="userInput"
-        type="text"
-        placeholder="Escribí tu mensaje…"
-        autocomplete="off"
-      />
-      <button id="sendBtn">Enviar</button>
-    </footer>
-  </div>
+  <main id="chat" class="chat-body"></main>
 
-  <!-- JS -->
-  <script src="{{ url_for('static', filename='script.js') }}"></script>
+  <footer class="chat-input">
+    <input
+      id="userInput"
+      type="text"
+      placeholder="Escribí tu mensaje…"
+      autocomplete="off"
+    />
+    <button id="sendBtn">Enviar</button>
+  </footer>
+
+</div>
+
+<script src="/static/script.js"></script>
+
 </body>
 </html>
