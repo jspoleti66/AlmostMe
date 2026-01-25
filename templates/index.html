@@ -1,27 +1,51 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AlmostMe – Clon Interactivo</title>
-<link rel="stylesheet" href="/static/style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>AlmostMe – Clon Interactivo</title>
+
+  <!-- Estilos -->
+  <link rel="stylesheet" href="/static/style.css">
+
+  <!-- Favicon -->
+  <link rel="icon" href="/static/favicon.ico">
 </head>
+
 <body>
 
-<div class="app">
-  <header class="header">
-    <img src="/static/images/logo.png" class="logo main-logo">
-  </header>
+  <div class="app">
 
-  <main id="chat" class="chat"></main>
+    <!-- HEADER -->
+    <header class="header">
+      <img src="/static/images/logo.png" class="main-logo" alt="AlmostMe Logo">
+    </header>
 
-  <form id="form" class="input-area">
-    <input id="input" type="text" placeholder="Escribí tu mensaje..." autocomplete="off">
-    <button type="submit">Enviar</button>
-  </form>
-</div>
+    <!-- CHAT -->
+    <main id="chat" class="chat"></main>
 
-<script src="/static/script.js"></script>
+    <!-- INPUT -->
+    <form id="form" class="input-area">
+
+      <input
+        id="input"
+        type="text"
+        placeholder="Escribí tu mensaje..."
+        autocomplete="off"
+        required
+      >
+
+      <button type="submit">
+        Enviar
+      </button>
+
+    </form>
+
+  </div>
+
+  <!-- Script -->
+  <script src="/static/script.js"></script>
+
 </body>
 </html>
-
