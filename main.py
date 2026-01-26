@@ -1,10 +1,15 @@
 import os
 import json
+
 from flask import Flask, request, jsonify, render_template, session
 from datetime import timedelta
 
 from azure.ai.inference import ChatCompletionsClient
-from azure.ai.inference.models import SystemMessage, UserMessage, AssistantMessage
+from azure.ai.inference.models import (
+    SystemMessage,
+    UserMessage,
+    AssistantMessage
+)
 from azure.core.credentials import AzureKeyCredential
 
 
@@ -13,38 +18,40 @@ from azure.core.credentials import AzureKeyCredential
 # =====================================================
 
 app = Flask(__name__)
+
 app.secret_key = os.getenv("SECRET_KEY", "almostme_secret")
 app.permanent_session_lifetime = timedelta(minutes=30)
 
+
+# =====================================================
+# PATHS
+# =====================================================
+
 BASE_PATH = "data/conocimiento"
-SYSTEM_PATH = "data/prompts/system.txt"
-MANUALES_PATH = "data/conocimiento/manuales.json"
+CONFIG_PATH = "data/config/context.json"
 
 
 # =====================================================
-# PALABRAS CLAVE
+# CONFIG
 # =====================================================
 
-PALABRAS_RECURSOS = [
-    "recurso", "recursos",
-    "tutorial", "tutoriales",
-    "guia", "guía",
-    "curso", "cursos",
-    "documentacion", "documentación",
-    "material", "materiales"
-]
+def load_config():
+
+    if not os.path.exists(CONFIG_PATH):
+        raise Exception("context.json no encontrado")
+
+    with open(CONFIG_PATH, encoding="utf-8") as f:
+        return json.load(f)
 
 
-PALABRAS_MANUALES = [
-    "manual", "manuales", "abrir", "descargar"
-]
+CONFIG = load_config()
 
 
 # =====================================================
-# CARGA
+# FILE LOADERS
 # =====================================================
 
-def cargar_txt(path):
+def load_txt(path):
 
     if not os.path.exists(path):
         return ""
@@ -53,7 +60,7 @@ def cargar_txt(path):
         return f.read().strip()
 
 
-def cargar_json(path):
+def load_json(path):
 
     if not os.path.exists(path):
         return {}
@@ -62,170 +69,209 @@ def cargar_json(path):
         return json.load(f)
 
 
-def cargar_conocimiento():
-
-    data = {}
-
-    if not os.path.exists(BASE_PATH):
-        return data
-
-    for f in os.listdir(BASE_PATH):
-
-        name, ext = os.path.splitext(f)
-        path = os.path.join(BASE_PATH, f)
-
-        if ext == ".txt":
-
-            c = cargar_txt(path)
-
-            if c:
-                data[name] = c
-
-
-        elif ext == ".json" and f != "manuales.json":
-
-            j = cargar_json(path)
-
-            if j:
-                data[name] = json.dumps(
-                    j,
-                    ensure_ascii=False,
-                    indent=2
-                )
-
-    return data
-
-
-def cargar_manuales():
-
-    if not os.path.exists(MANUALES_PATH):
-        return []
-
-    with open(MANUALES_PATH, encoding="utf-8") as f:
-        return json.load(f).get("items", [])
-
-
-
-SYSTEM_PROMPT = cargar_txt(SYSTEM_PATH)
-CONOCIMIENTO = cargar_conocimiento()
-MANUALES = cargar_manuales()
-
-
 # =====================================================
-# CONTEXTO
+# KNOWLEDGE
 # =====================================================
 
-def construir_contexto():
+def load_domains():
 
-    bloques = []
+    domains = []
 
-    for dom, cont in CONOCIMIENTO.items():
+    for name, cfg in CONFIG["domains"].items():
 
-        bloques.append(
-            "────────────────────────────────────────\n"
-            f"DOMINIO: {dom}\n"
-            "────────────────────────────────────────\n"
-            f"{cont}"
-        )
+        blocks = []
 
-    return (
-        f"{SYSTEM_PROMPT}\n\n"
-        "════════════════════════════════════════\n"
-        "CONOCIMIENTO PERSONAL AUTORIZADO\n"
-        "════════════════════════════════════════\n\n"
-        + "\n\n".join(bloques)
+        for file in cfg["files"]:
+
+            path = os.path.join(BASE_PATH, file)
+
+            content = load_txt(path)
+
+            if content:
+                blocks.append(content)
+
+        if blocks:
+
+            domains.append({
+                "name": name.upper(),
+                "priority": cfg["priority"],
+                "content": "\n\n".join(blocks)
+            })
+
+    # Prioridad descendente
+    domains.sort(
+        key=lambda x: x["priority"],
+        reverse=True
     )
+
+    return domains
+
+
+DOMAINS = load_domains()
 
 
 # =====================================================
 # MANUALES
 # =====================================================
 
-def buscar_manual(texto):
+def load_manuals():
 
-    t = texto.lower()
+    path = os.path.join(
+        BASE_PATH,
+        CONFIG["manuales"]["path"]
+    )
 
-    for m in MANUALES:
+    if not os.path.exists(path):
+        return []
 
-        ids = m.get("id", "").lower().split(",")
+    data = load_json(path)
 
-        for i in ids:
+    return data.get("items", [])
 
-            if i.strip() in t:
-                return m
+
+MANUALES = load_manuals()
+
+
+# =====================================================
+# SYSTEM PROMPT
+# =====================================================
+
+SYSTEM_PROMPT = load_txt(
+    CONFIG["system_prompt"]
+)
+
+
+# =====================================================
+# CONTEXT BUILDER
+# =====================================================
+
+def build_global_context():
+
+    blocks = []
+
+    for d in DOMAINS:
+
+        blocks.append(
+            f"""
+══════════════════════════════════════
+DOMINIO: {d['name']}
+══════════════════════════════════════
+
+{d['content']}
+"""
+        )
+
+    return (
+        f"{SYSTEM_PROMPT}\n\n"
+        "══════════════════════════════════════\n"
+        "CONOCIMIENTO PERSONAL AUTORIZADO\n"
+        "══════════════════════════════════════\n\n"
+        + "\n".join(blocks)
+    )
+
+
+# =====================================================
+# MANUAL SEARCH
+# =====================================================
+
+def find_manual(message):
+
+    text = message.lower()
+
+    for manual in MANUALES:
+
+        ids = manual.get("id", "").lower().split(",")
+
+        for key in ids:
+
+            if key.strip() in text:
+                return manual
 
     return None
 
 
-def generar_vcard(m):
+def render_vcard(manual):
 
     return f"""
 <div class="vcard">
-  <strong>{m['title']}</strong><br>
-  <span>{m['summary']}</span><br>
-  <a href="{m['url']}" target="_blank" rel="noopener">Abrir manual</a>
+  <strong>{manual['title']}</strong><br>
+  <span>{manual['summary']}</span><br>
+  <a href="{manual['url']}" target="_blank" rel="noopener">Abrir manual</a>
 </div>
 """
 
 
 # =====================================================
-# MODELO
+# MODEL
 # =====================================================
 
-def consultar_modelo(historial, msg):
+def query_model(history, message):
 
     token = os.getenv("GITHUB_TOKEN")
 
     if not token:
         return "No tengo acceso al modelo."
 
-
     client = ChatCompletionsClient(
         endpoint="https://models.inference.ai.azure.com",
         credential=AzureKeyCredential(token),
     )
 
-
-    mensajes = [
-        SystemMessage(content=construir_contexto())
+    messages = [
+        SystemMessage(
+            content=build_global_context()
+        )
     ]
 
+    limit = CONFIG["history_limit"]
 
-    for h in historial[-6:]:
+    for msg in history[-limit:]:
 
-        if h["role"] == "user":
-            mensajes.append(UserMessage(content=h["content"]))
+        if msg["role"] == "user":
 
-        elif h["role"] == "assistant":
-            mensajes.append(AssistantMessage(content=h["content"]))
+            messages.append(
+                UserMessage(
+                    content=msg["content"]
+                )
+            )
+
+        elif msg["role"] == "assistant":
+
+            messages.append(
+                AssistantMessage(
+                    content=msg["content"]
+                )
+            )
 
 
-    mensajes.append(UserMessage(content=msg))
-
-
-    r = client.complete(
-        model="Meta-Llama-3.1-8B-Instruct",
-        messages=mensajes,
-        temperature=0.05,   # 🔑 menos fantasía
-        max_tokens=400,
-        top_p=0.05
+    messages.append(
+        UserMessage(content=message)
     )
 
-    return r.choices[0].message.content.strip()
+
+    response = client.complete(
+        model="Meta-Llama-3.1-8B-Instruct",
+        messages=messages,
+        temperature=0.1,
+        max_tokens=512,
+        top_p=0.1
+    )
+
+
+    return response.choices[0].message.content.strip()
 
 
 # =====================================================
-# RUTAS
+# ROUTES
 # =====================================================
 
 @app.route("/")
 def index():
 
     session.permanent = True
-    session.setdefault("historial", [])
+    session.setdefault("history", [])
 
     return render_template("index.html")
-
 
 
 @app.route("/chat", methods=["POST"])
@@ -233,77 +279,61 @@ def chat():
 
     data = request.get_json(silent=True) or {}
 
-    mensaje = data.get("message", "").strip()
+    message = data.get("message", "").strip()
+
+    if not message:
+
+        return jsonify({
+            "type": "text",
+            "content": "Decime."
+        })
 
 
-    if not mensaje:
-
-        return jsonify(type="text", content="Decime.")
+    history = session.get("history", [])
 
 
-    historial = session["historial"]
+    # ================================
+    # MANUAL
+    # ================================
 
-    texto = mensaje.lower()
+    manual = find_manual(message)
 
+    if manual:
 
-    # =============================================
-    # MANUALES
-    # =============================================
+        card = render_vcard(manual)
 
-    if any(p in texto for p in PALABRAS_MANUALES):
+        history.extend([
+            {"role": "user", "content": message},
+            {"role": "assistant", "content": card}
+        ])
 
-        manual = buscar_manual(mensaje)
+        session["history"] = history[-12:]
 
-        if manual:
-
-            html = generar_vcard(manual)
-
-            historial += [
-                {"role":"user","content":mensaje},
-                {"role":"assistant","content":html}
-            ]
-
-            session["historial"] = historial[-12:]
-
-            return jsonify(type="card", content=html)
+        return jsonify({
+            "type": "card",
+            "content": card
+        })
 
 
-        return jsonify(
-            type="text",
-            content="No tengo información sobre ese manual."
-        )
+    # ================================
+    # CHAT
+    # ================================
+
+    answer = query_model(history, message)
 
 
-    # =============================================
-    # RECURSOS
-    # =============================================
+    history.extend([
+        {"role": "user", "content": message},
+        {"role": "assistant", "content": answer}
+    ])
 
-    if any(p in texto for p in PALABRAS_RECURSOS):
-
-        return jsonify(
-            type="text",
-            content="No tengo información sobre esos recursos."
-        )
+    session["history"] = history[-12:]
 
 
-    # =============================================
-    # CHAT NORMAL
-    # =============================================
-
-    resp = consultar_modelo(historial, mensaje)
-
-
-    historial += [
-        {"role":"user","content":mensaje},
-        {"role":"assistant","content":resp}
-    ]
-
-
-    session["historial"] = historial[-12:]
-
-
-    return jsonify(type="text", content=resp)
-
+    return jsonify({
+        "type": "text",
+        "content": answer
+    })
 
 
 # =====================================================
@@ -314,4 +344,8 @@ if __name__ == "__main__":
 
     port = int(os.environ.get("PORT", 5000))
 
-    app.run(host="0.0.0.0", port=port)
+    app.run(
+        host="0.0.0.0",
+        port=port,
+        debug=False
+    )
