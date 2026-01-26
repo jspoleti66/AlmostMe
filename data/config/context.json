@@ -1,0 +1,52 @@
+{
+  "system_prompt": "data/prompts/system.txt",
+
+  "history_limit": 6,
+
+  "domains": {
+    "identidad": {
+      "priority": 10,
+      "files": [
+        "personalidad.txt",
+        "historia_personal.txt",
+        "cv.txt",
+        "intereses.txt"
+      ]
+    },
+
+    "hogar": {
+      "priority": 9,
+      "files": [
+        "hogar_distribucion.txt",
+        "hogar_mantenimiento.txt",
+        "hogar_otros.txt",
+        "hogar_seguridad.txt"
+      ]
+    },
+
+    "contactos": {
+      "priority": 8,
+      "files": [
+        "contactos_clave.txt"
+      ]
+    },
+
+    "tecnico": {
+      "priority": 7,
+      "files": [
+        "conocimiento_tecnico.txt"
+      ]
+    },
+
+    "frecuentes": {
+      "priority": 6,
+      "files": [
+        "respuestas_frecuentes.txt"
+      ]
+    }
+  },
+
+  "manuales": {
+    "path": "manuales.json"
+  }
+}
