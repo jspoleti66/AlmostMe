@@ -22,7 +22,26 @@ MANUALES_PATH = "data/conocimiento/manuales.json"
 
 
 # =====================================================
-# CARGA DE ARCHIVOS
+# PALABRAS CLAVE
+# =====================================================
+
+PALABRAS_RECURSOS = [
+    "recurso", "recursos",
+    "tutorial", "tutoriales",
+    "guia", "guía",
+    "curso", "cursos",
+    "documentacion", "documentación",
+    "material", "materiales"
+]
+
+
+PALABRAS_MANUALES = [
+    "manual", "manuales", "abrir", "descargar"
+]
+
+
+# =====================================================
+# CARGA
 # =====================================================
 
 def cargar_txt(path):
@@ -45,36 +64,36 @@ def cargar_json(path):
 
 def cargar_conocimiento():
 
-    conocimiento = {}
+    data = {}
 
     if not os.path.exists(BASE_PATH):
-        return conocimiento
+        return data
 
-    for archivo in os.listdir(BASE_PATH):
+    for f in os.listdir(BASE_PATH):
 
-        nombre, ext = os.path.splitext(archivo)
-        ruta = os.path.join(BASE_PATH, archivo)
+        name, ext = os.path.splitext(f)
+        path = os.path.join(BASE_PATH, f)
 
         if ext == ".txt":
 
-            contenido = cargar_txt(ruta)
+            c = cargar_txt(path)
 
-            if contenido:
-                conocimiento[nombre] = contenido
+            if c:
+                data[name] = c
 
 
-        elif ext == ".json" and archivo != "manuales.json":
+        elif ext == ".json" and f != "manuales.json":
 
-            data = cargar_json(ruta)
+            j = cargar_json(path)
 
-            if data:
-                conocimiento[nombre] = json.dumps(
-                    data,
+            if j:
+                data[name] = json.dumps(
+                    j,
                     ensure_ascii=False,
                     indent=2
                 )
 
-    return conocimiento
+    return data
 
 
 def cargar_manuales():
@@ -83,9 +102,8 @@ def cargar_manuales():
         return []
 
     with open(MANUALES_PATH, encoding="utf-8") as f:
-        data = json.load(f)
+        return json.load(f).get("items", [])
 
-    return data.get("items", [])
 
 
 SYSTEM_PROMPT = cargar_txt(SYSTEM_PATH)
@@ -94,147 +112,106 @@ MANUALES = cargar_manuales()
 
 
 # =====================================================
-# CONTEXTO GLOBAL
+# CONTEXTO
 # =====================================================
 
 def construir_contexto():
 
     bloques = []
 
-    for dominio, contenido in CONOCIMIENTO.items():
+    for dom, cont in CONOCIMIENTO.items():
 
         bloques.append(
-            f"DOMINIO: {dominio}\n{contenido}"
+            "────────────────────────────────────────\n"
+            f"DOMINIO: {dom}\n"
+            "────────────────────────────────────────\n"
+            f"{cont}"
         )
 
     return (
         f"{SYSTEM_PROMPT}\n\n"
-        "CONOCIMIENTO PERSONAL:\n\n"
+        "════════════════════════════════════════\n"
+        "CONOCIMIENTO PERSONAL AUTORIZADO\n"
+        "════════════════════════════════════════\n\n"
         + "\n\n".join(bloques)
     )
-
-
-# =====================================================
-# MODELO
-# =====================================================
-
-def cliente_modelo():
-
-    token = os.getenv("GITHUB_TOKEN")
-
-    if not token:
-        return None
-
-    return ChatCompletionsClient(
-        endpoint="https://models.inference.ai.azure.com",
-        credential=AzureKeyCredential(token),
-    )
-
-
-def llamar_modelo(mensajes):
-
-    client = cliente_modelo()
-
-    if not client:
-        return "No tengo acceso al modelo."
-
-    response = client.complete(
-        model="Meta-Llama-3.1-8B-Instruct",
-        messages=mensajes,
-        temperature=0.2,
-        max_tokens=600,
-        top_p=0.2
-    )
-
-    return response.choices[0].message.content.strip()
-
-
-# =====================================================
-# INTENCIÓN
-# =====================================================
-
-def detectar_intencion(mensaje):
-
-    prompt = f"""
-Clasificá la intención del usuario.
-
-Opciones:
-- manual
-- informacion
-- chat
-
-Respondé SOLO en JSON.
-
-Mensaje:
-"{mensaje}"
-"""
-
-    mensajes = [
-        SystemMessage(content="Sos un clasificador."),
-        UserMessage(content=prompt)
-    ]
-
-    salida = llamar_modelo(mensajes)
-
-    try:
-        data = json.loads(salida)
-        return data.get("intent", "chat")
-    except:
-        return "chat"
 
 
 # =====================================================
 # MANUALES
 # =====================================================
 
-def buscar_manual_semantico(mensaje):
+def buscar_manual(texto):
 
-    texto = mensaje.lower()
+    t = texto.lower()
 
-    for manual in MANUALES:
+    for m in MANUALES:
 
-        ids = manual.get("id", "").lower().split(",")
+        ids = m.get("id", "").lower().split(",")
 
-        for palabra in ids:
+        for i in ids:
 
-            if palabra.strip() in texto:
-                return manual
+            if i.strip() in t:
+                return m
 
     return None
 
 
-def generar_vcard(manual):
+def generar_vcard(m):
 
     return f"""
 <div class="vcard">
-  <strong>{manual['title']}</strong><br>
-  <span>{manual['summary']}</span><br>
-  <a href="{manual['url']}" target="_blank">Abrir manual</a>
+  <strong>{m['title']}</strong><br>
+  <span>{m['summary']}</span><br>
+  <a href="{m['url']}" target="_blank" rel="noopener">Abrir manual</a>
 </div>
 """
 
 
 # =====================================================
-# CHAT IA
+# MODELO
 # =====================================================
 
-def procesar_chat(historial, mensaje):
+def consultar_modelo(historial, msg):
+
+    token = os.getenv("GITHUB_TOKEN")
+
+    if not token:
+        return "No tengo acceso al modelo."
+
+
+    client = ChatCompletionsClient(
+        endpoint="https://models.inference.ai.azure.com",
+        credential=AzureKeyCredential(token),
+    )
+
 
     mensajes = [
         SystemMessage(content=construir_contexto())
     ]
 
-    for msg in historial[-6:]:
 
-        if msg["role"] == "user":
-            mensajes.append(UserMessage(content=msg["content"]))
+    for h in historial[-6:]:
 
-        if msg["role"] == "assistant":
-            mensajes.append(AssistantMessage(content=msg["content"]))
+        if h["role"] == "user":
+            mensajes.append(UserMessage(content=h["content"]))
 
-    mensajes.append(UserMessage(content=mensaje))
+        elif h["role"] == "assistant":
+            mensajes.append(AssistantMessage(content=h["content"]))
 
-    return llamar_modelo(mensajes)
+
+    mensajes.append(UserMessage(content=msg))
+
+
+    r = client.complete(
+        model="Meta-Llama-3.1-8B-Instruct",
+        messages=mensajes,
+        temperature=0.05,   # 🔑 menos fantasía
+        max_tokens=400,
+        top_p=0.05
+    )
+
+    return r.choices[0].message.content.strip()
 
 
 # =====================================================
@@ -250,6 +227,7 @@ def index():
     return render_template("index.html")
 
 
+
 @app.route("/chat", methods=["POST"])
 def chat():
 
@@ -257,66 +235,75 @@ def chat():
 
     mensaje = data.get("message", "").strip()
 
+
     if not mensaje:
 
-        return jsonify({
-            "type": "text",
-            "content": "Decime."
-        })
+        return jsonify(type="text", content="Decime.")
 
 
-    historial = session.get("historial", [])
+    historial = session["historial"]
+
+    texto = mensaje.lower()
 
 
-    # ============================================
-    # DETECTAR INTENCIÓN
-    # ============================================
-
-    intent = detectar_intencion(mensaje)
-
-
-    # ============================================
+    # =============================================
     # MANUALES
-    # ============================================
+    # =============================================
 
-    if intent == "manual":
+    if any(p in texto for p in PALABRAS_MANUALES):
 
-        manual = buscar_manual_semantico(mensaje)
+        manual = buscar_manual(mensaje)
 
         if manual:
 
             html = generar_vcard(manual)
 
-            historial.extend([
-                {"role": "user", "content": mensaje},
-                {"role": "assistant", "content": html}
-            ])
+            historial += [
+                {"role":"user","content":mensaje},
+                {"role":"assistant","content":html}
+            ]
 
             session["historial"] = historial[-12:]
 
-            return jsonify({
-                "type": "card",
-                "content": html
-            })
+            return jsonify(type="card", content=html)
 
 
-    # ============================================
+        return jsonify(
+            type="text",
+            content="No tengo información sobre ese manual."
+        )
+
+
+    # =============================================
+    # RECURSOS
+    # =============================================
+
+    if any(p in texto for p in PALABRAS_RECURSOS):
+
+        return jsonify(
+            type="text",
+            content="No tengo información sobre esos recursos."
+        )
+
+
+    # =============================================
     # CHAT NORMAL
-    # ============================================
+    # =============================================
 
-    respuesta = procesar_chat(historial, mensaje)
+    resp = consultar_modelo(historial, mensaje)
 
-    historial.extend([
-        {"role": "user", "content": mensaje},
-        {"role": "assistant", "content": respuesta}
-    ])
+
+    historial += [
+        {"role":"user","content":mensaje},
+        {"role":"assistant","content":resp}
+    ]
+
 
     session["historial"] = historial[-12:]
 
-    return jsonify({
-        "type": "text",
-        "content": respuesta
-    })
+
+    return jsonify(type="text", content=resp)
+
 
 
 # =====================================================
@@ -327,8 +314,4 @@ if __name__ == "__main__":
 
     port = int(os.environ.get("PORT", 5000))
 
-    app.run(
-        host="0.0.0.0",
-        port=port,
-        debug=True
-    )
+    app.run(host="0.0.0.0", port=port)
