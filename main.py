@@ -17,6 +17,7 @@ app.permanent_session_lifetime = timedelta(minutes=30)
 
 BASE_PATH = "data/conocimiento"
 SYSTEM_PATH = "data/prompts/system.txt"
+MANUALES_PATH = "data/conocimiento/manuales.json"
 
 # =====================================================
 # CARGA DE ARCHIVOS
@@ -28,11 +29,13 @@ def cargar_txt(path):
     with open(path, encoding="utf-8") as f:
         return f.read().strip()
 
+
 def cargar_json(path):
     if not os.path.exists(path):
         return {}
     with open(path, encoding="utf-8") as f:
         return json.load(f)
+
 
 def cargar_conocimiento(base_path=BASE_PATH):
     conocimiento = {}
@@ -50,6 +53,10 @@ def cargar_conocimiento(base_path=BASE_PATH):
                 conocimiento[nombre] = contenido
 
         elif ext == ".json":
+            # ❗ EXCLUIMOS manuales.json (se procesa aparte)
+            if archivo == "manuales.json":
+                continue
+
             data = cargar_json(ruta)
             if data:
                 conocimiento[nombre] = json.dumps(
@@ -60,8 +67,24 @@ def cargar_conocimiento(base_path=BASE_PATH):
 
     return conocimiento
 
+
+# =====================================================
+# CARGA DE MANUALES (ESTRUCTURADO)
+# =====================================================
+
+def cargar_manuales():
+    if not os.path.exists(MANUALES_PATH):
+        return []
+
+    with open(MANUALES_PATH, encoding="utf-8") as f:
+        data = json.load(f)
+
+    return data.get("items", [])
+
+
 SYSTEM_PROMPT = cargar_txt(SYSTEM_PATH)
 CONOCIMIENTO = cargar_conocimiento()
+MANUALES = cargar_manuales()
 
 # =====================================================
 # CONTEXTO GLOBAL
@@ -89,11 +112,40 @@ def construir_contexto_global():
     )
 
 # =====================================================
+# BUSCADOR DE MANUALES
+# =====================================================
+
+def buscar_manual(mensaje):
+    mensaje = mensaje.lower()
+
+    for manual in MANUALES:
+        ids = manual.get("id", "").lower().split(",")
+
+        for palabra in ids:
+            if palabra.strip() in mensaje:
+                return manual
+
+    return None
+
+
+def generar_vcard(manual):
+    return f"""
+<div class="vcard">
+  <strong>{manual['title']}</strong><br>
+  <span>{manual['summary']}</span><br>
+  <a href="{manual['url']}" target="_blank" rel="noopener">Abrir manual</a>
+</div>
+"""
+
+
+# =====================================================
 # MODELO
 # =====================================================
 
 def consultar_modelo(historial, mensaje_usuario):
+
     token = os.getenv("GITHUB_TOKEN")
+
     if not token:
         return "No tengo acceso al modelo."
 
@@ -102,15 +154,25 @@ def consultar_modelo(historial, mensaje_usuario):
         credential=AzureKeyCredential(token),
     )
 
-    mensajes = [SystemMessage(content=construir_contexto_global())]
+    mensajes = [
+        SystemMessage(content=construir_contexto_global())
+    ]
 
     for msg in historial[-6:]:
-        if msg["role"] == "user":
-            mensajes.append(UserMessage(content=msg["content"]))
-        elif msg["role"] == "assistant":
-            mensajes.append(AssistantMessage(content=msg["content"]))
 
-    mensajes.append(UserMessage(content=mensaje_usuario))
+        if msg["role"] == "user":
+            mensajes.append(
+                UserMessage(content=msg["content"])
+            )
+
+        elif msg["role"] == "assistant":
+            mensajes.append(
+                AssistantMessage(content=msg["content"])
+            )
+
+    mensajes.append(
+        UserMessage(content=mensaje_usuario)
+    )
 
     response = client.complete(
         model="Meta-Llama-3.1-8B-Instruct",
@@ -122,18 +184,23 @@ def consultar_modelo(historial, mensaje_usuario):
 
     return response.choices[0].message.content.strip()
 
+
 # =====================================================
 # RUTAS
 # =====================================================
 
 @app.route("/")
 def index():
+
     session.permanent = True
     session.setdefault("historial", [])
+
     return render_template("index.html")
+
 
 @app.route("/chat", methods=["POST"])
 def chat():
+
     data = request.get_json(silent=True) or {}
     mensaje = data.get("message", "").strip()
 
@@ -145,29 +212,66 @@ def chat():
 
     historial = session.get("historial", [])
 
-    respuesta = consultar_modelo(historial, mensaje)
+    # =================================================
+    # 🔍 BUSCAR MANUAL ANTES DE USAR EL MODELO
+    # =================================================
 
-    historial.append({"role": "user", "content": mensaje})
-    historial.append({"role": "assistant", "content": respuesta})
-    session["historial"] = historial[-12:]
+    manual = buscar_manual(mensaje)
 
-    # 🔑 DETECCIÓN DE VCARD / HTML
-    if respuesta.strip().startswith("<div") and "vcard" in respuesta:
-        return jsonify({
-            "type": "card",
-            "content": respuesta
+    if manual:
+
+        html = generar_vcard(manual)
+
+        historial.append({
+            "role": "user",
+            "content": mensaje
         })
 
-    # TEXTO NORMAL
+        historial.append({
+            "role": "assistant",
+            "content": html
+        })
+
+        session["historial"] = historial[-12:]
+
+        return jsonify({
+            "type": "card",
+            "content": html
+        })
+
+    # =================================================
+    # 🤖 SI NO HAY MANUAL → USAR MODELO
+    # =================================================
+
+    respuesta = consultar_modelo(historial, mensaje)
+
+    historial.append({
+        "role": "user",
+        "content": mensaje
+    })
+
+    historial.append({
+        "role": "assistant",
+        "content": respuesta
+    })
+
+    session["historial"] = historial[-12:]
+
     return jsonify({
         "type": "text",
         "content": respuesta
     })
+
 
 # =====================================================
 # RUN
 # =====================================================
 
 if __name__ == "__main__":
+
     port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+
+    app.run(
+        host="0.0.0.0",
+        port=port
+    )
