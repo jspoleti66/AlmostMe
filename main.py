@@ -1,5 +1,6 @@
 import os
 import json
+import re
 
 from flask import Flask, request, jsonify, render_template, session
 from datetime import timedelta
@@ -98,11 +99,7 @@ def load_domains():
                 "content": "\n\n".join(blocks)
             })
 
-    # Prioridad descendente
-    domains.sort(
-        key=lambda x: x["priority"],
-        reverse=True
-    )
+    domains.sort(key=lambda x: x["priority"], reverse=True)
 
     return domains
 
@@ -142,7 +139,7 @@ SYSTEM_PROMPT = load_txt(
 
 
 # =====================================================
-# CONTEXT BUILDER
+# CONTEXT
 # =====================================================
 
 def build_global_context():
@@ -171,12 +168,21 @@ DOMINIO: {d['name']}
 
 
 # =====================================================
-# MANUAL SEARCH
+# UTILS
+# =====================================================
+
+def normalize(text):
+
+    return re.sub(r"[^\w\s]", "", text.lower())
+
+
+# =====================================================
+# MANUALES
 # =====================================================
 
 def find_manual(message):
 
-    text = message.lower()
+    text = normalize(message)
 
     for manual in MANUALES:
 
@@ -201,6 +207,39 @@ def render_vcard(manual):
 """
 
 
+def list_manual_titles():
+
+    return [m["title"] for m in MANUALES]
+
+
+# =====================================================
+# INTENT DETECTION
+# =====================================================
+
+def is_list_request(text):
+
+    keywords = [
+        "lista",
+        "todos",
+        "todo",
+        "mostrame",
+        "que tenes",
+        "qué tenes",
+        "manuales"
+    ]
+
+    t = normalize(text)
+
+    return any(k in t for k in keywords)
+
+
+def is_ambiguous_list(text):
+
+    t = normalize(text)
+
+    return "lista" in t and "manual" not in t
+
+
 # =====================================================
 # MODEL
 # =====================================================
@@ -218,9 +257,7 @@ def query_model(history, message):
     )
 
     messages = [
-        SystemMessage(
-            content=build_global_context()
-        )
+        SystemMessage(content=build_global_context())
     ]
 
     limit = CONFIG["history_limit"]
@@ -230,17 +267,13 @@ def query_model(history, message):
         if msg["role"] == "user":
 
             messages.append(
-                UserMessage(
-                    content=msg["content"]
-                )
+                UserMessage(content=msg["content"])
             )
 
         elif msg["role"] == "assistant":
 
             messages.append(
-                AssistantMessage(
-                    content=msg["content"]
-                )
+                AssistantMessage(content=msg["content"])
             )
 
 
@@ -252,11 +285,10 @@ def query_model(history, message):
     response = client.complete(
         model="Meta-Llama-3.1-8B-Instruct",
         messages=messages,
-        temperature=0.1,
-        max_tokens=512,
-        top_p=0.1
+        temperature=0.05,
+        max_tokens=400,
+        top_p=0.05
     )
-
 
     return response.choices[0].message.content.strip()
 
@@ -292,9 +324,54 @@ def chat():
     history = session.get("history", [])
 
 
-    # ================================
-    # MANUAL
-    # ================================
+    # ======================================
+    # AMBIGUOUS LIST
+    # ======================================
+
+    if is_ambiguous_list(message):
+
+        return jsonify({
+            "type": "text",
+            "content": "¿Lista de qué exactamente?"
+        })
+
+
+    # ======================================
+    # LIST MANUALES
+    # ======================================
+
+    if is_list_request(message) and "manual" in normalize(message):
+
+        titles = list_manual_titles()
+
+        if not titles:
+
+            return jsonify({
+                "type": "text",
+                "content": "No tengo manuales."
+            })
+
+        if len(titles) <= 3:
+
+            txt = "Tengo estos manuales:\n\n"
+
+            for t in titles:
+                txt += f"• {t}\n"
+
+            return jsonify({
+                "type": "text",
+                "content": txt.strip()
+            })
+
+        return jsonify({
+            "type": "text",
+            "content": "Tengo varios manuales. Decime cuál buscás."
+        })
+
+
+    # ======================================
+    # MANUAL INDIVIDUAL
+    # ======================================
 
     manual = find_manual(message)
 
@@ -315,9 +392,9 @@ def chat():
         })
 
 
-    # ================================
-    # CHAT
-    # ================================
+    # ======================================
+    # CHAT MODEL
+    # ======================================
 
     answer = query_model(history, message)
 
