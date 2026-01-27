@@ -108,27 +108,6 @@ Debés:
 3. No repetir ninguno.
 4. No agregar categorías falsas.
 
-Si hay hasta 3 manuales:
-
-Mostralos en texto simple.
-
-Ejemplo:
-
-Tengo estos manuales:
-
-• Manual de Piscina  
-• Manual de Jardinería  
-
-¿Sobre cuál querés información?
-
-Si hay más de 3 manuales:
-
-No los muestres todos.
-Agrupá por categoría real
-y pedí que elija primero.
-
-Nunca muestres listas largas completas.
-
 ────────────────────────────────────────
 RECURSOS, TUTORIALES Y MATERIALES
 ────────────────────────────────────────
@@ -210,3 +189,4 @@ Respondés de forma clara,
 humana,
 directa,
 sin adornos.
+
