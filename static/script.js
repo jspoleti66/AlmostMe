@@ -2,14 +2,14 @@ const chat = document.getElementById("chat");
 const form = document.getElementById("form");
 const input = document.getElementById("input");
 
-// Avatar
-const avatar = document.getElementById("avatar");
+// Avatar flotante
+const avatar = document.getElementById("floating-avatar");
 
 let typingDiv = null;
 
 
 /* ===============================
-   Activar / desactivar speaking
+   Speaking
 ================================ */
 
 function startSpeaking(){
@@ -26,7 +26,7 @@ function stopSpeaking(){
 
 
 /* ===============================
-   Agregar mensaje
+   Mensajes
 ================================ */
 
 function addMessage(text, type){
@@ -41,12 +41,13 @@ function addMessage(text, type){
   div.innerHTML = text.replace(/\n/g, "<br>");
 
   chat.appendChild(div);
+
   scrollBottom();
 }
 
 
 /* ===============================
-   Mostrar "escribiendo"
+   Typing
 ================================ */
 
 function showTyping(){
@@ -61,16 +62,12 @@ function showTyping(){
   `;
 
   chat.appendChild(typingDiv);
+
   scrollBottom();
 
-  // Activa avatar
   startSpeaking();
 }
 
-
-/* ===============================
-   Ocultar "escribiendo"
-================================ */
 
 function hideTyping(){
 
@@ -79,7 +76,6 @@ function hideTyping(){
     typingDiv = null;
   }
 
-  // Desactiva avatar
   stopSpeaking();
 }
 
