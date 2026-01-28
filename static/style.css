@@ -402,3 +402,20 @@ body{
   pointer-events:none;
 }
 
+#floating-avatar .avatar-main{
+
+  width:64px;
+  height:64px;
+
+  border-radius:50%;
+
+  object-fit:cover;
+
+  border:2px solid #2563eb;
+
+  background:#020617;
+
+  box-shadow:0 0 15px #2563eb88;
+
+  animation:idleFloat 5s ease-in-out infinite;
+}
