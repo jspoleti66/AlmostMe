@@ -18,19 +18,14 @@
     <!-- HEADER -->
     <header class="chat-header">
 
-      <img src="/static/logo.png" class="chat-logo">
+      <div id="avatar" class="logo-container">
 
-      <div class="chat-status">
-        ● Online
-      </div>
+        <!-- Logo fondo -->
+        <img src="/static/logo.png" class="logo-bg">
 
-      <!-- AVATAR SUPERPUESTO -->
-      <div id="avatar" class="avatar-container">
-
-        <div class="avatar-glow"></div>
-
+        <!-- Video dentro -->
         <video
-          class="avatar-main"
+          class="avatar-video"
           src="/static/avatar.mp4"
           autoplay
           muted
@@ -38,6 +33,13 @@
           playsinline
         ></video>
 
+        <!-- Glow -->
+        <div class="logo-glow"></div>
+
+      </div>
+
+      <div class="status">
+        ● Online
       </div>
 
     </header>
