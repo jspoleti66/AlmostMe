@@ -26,7 +26,7 @@ function stopSpeaking(){
 
 
 /* ===============================
-   Mensajes
+   Agregar mensaje
 ================================ */
 
 function addMessage(text, type){
@@ -90,7 +90,7 @@ function scrollBottom(){
 
 
 /* ===============================
-   Envío
+   Submit
 ================================ */
 
 form.addEventListener("submit", async (e)=>{
@@ -101,6 +101,7 @@ form.addEventListener("submit", async (e)=>{
 
   if(!text) return;
 
+
   // Usuario
   addMessage(text, "user");
 
@@ -108,29 +109,30 @@ form.addEventListener("submit", async (e)=>{
 
   showTyping();
 
+
   try{
 
     const res = await fetch("/chat",{
       method: "POST",
       headers:{
-        "Content-Type": "application/json"
+        "Content-Type":"application/json"
       },
-      body: JSON.stringify({
-        message: text
+      body:JSON.stringify({
+        message:text
       })
     });
+
 
     const data = await res.json();
 
     hideTyping();
 
-    // Bot
     addMessage(data.content || "Sin respuesta", "bot");
 
-  }
-  catch(err){
 
-    console.error("Error:", err);
+  }catch(err){
+
+    console.error(err);
 
     hideTyping();
 
