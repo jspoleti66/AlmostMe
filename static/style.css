@@ -1,310 +1,37 @@
-*{
-  box-sizing:border-box;
-  margin:0;
-  padding:0;
-  font-family:system-ui, sans-serif;
-}
+/* ============================
+   AVATAR DENTRO DEL CHAT
+============================ */
 
-body{
-  background:linear-gradient(160deg,#020617,#020617,#020617);
-  height:100vh;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-}
+#floating-avatar{
 
-/* ===== APP ===== */
+  position: sticky;
+  top: 16px;
 
-.app{
-  width:100%;
-  max-width:420px;
-  height:95vh;
+  margin: 0 auto 18px;
 
-  background:#020617;
+  height: 220px;
 
-  display:flex;
-  flex-direction:column;
-
-  border-radius:28px;
-
-  box-shadow:
-    0 0 0 1px #1e293b,
-    0 25px 80px rgba(0,0,0,.8);
-
-  overflow:hidden;
-}
-
-/* ===== AVATAR SECTION ===== */
-
-.avatar-section{
-
-  position:relative;
-
-  height:260px;
-
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
+  border-radius: 24px;
 
   background:
     radial-gradient(circle at top,#2563eb22,transparent),
     #020617;
 
-  border-bottom:1px solid #1e293b;
-}
-
-
-/* ===== ESTADO HABLANDO ===== */
-
-.avatar-speaking .avatar-main{
-  box-shadow:
-    0 0 40px #2563eb,
-    0 0 80px #2563eb88;
-}
-
-.avatar-speaking .avatar-glow{
-  animation:talk 1s infinite alternate;
-}
-
-@keyframes talk{
-  from{
-    transform:scale(1);
-    opacity:.5;
-  }
-  to{
-    transform:scale(1.15);
-    opacity:1;
-  }
-}
-
-
-/* ===== FLOTACIÓN ===== */
-
-.avatar-main{
-  animation:float 6s ease-in-out infinite;
-}
-
-@keyframes float{
-  0%{transform:translateY(0px)}
-  50%{transform:translateY(-8px)}
-  100%{transform:translateY(0px)}
-}
-
-
-/* ===== GLOW ===== */
-
-.avatar-glow{
-
-  position:absolute;
-
-  width:180px;
-  height:180px;
-
-  background:#2563eb55;
-
-  filter:blur(60px);
-
-  border-radius:50%;
-
-  animation:pulse 4s infinite;
-}
-
-@keyframes pulse{
-  0%{opacity:.5}
-  50%{opacity:1}
-  100%{opacity:.5}
-}
-
-
-/* ===== VIDEO PRINCIPAL ===== */
-
-.avatar-main{
-
-  width:160px;
-  height:160px;
-
-  border-radius:50%;
-
-  object-fit:cover;
-
-  border:3px solid #2563eb;
-
-  z-index:2;
-
-  background:#020617;
-
-  box-shadow:0 0 30px #2563eb55;
-
-  transition:all .3s ease;
-}
-
-
-/* ===== NOMBRE ===== */
-
-.avatar-name{
-
-  margin-top:12px;
-
-  font-size:13px;
-  font-weight:600;
-
-  color:#e5e7eb;
-
-  opacity:.9;
-
-  z-index:2;
-}
-
-
-/* ===== CHAT ===== */
-
-.chat{
-  flex:1;
-
-  padding:16px 14px;
-
-  display:flex;
-  flex-direction:column;
-  gap:12px;
-
-  overflow-y:auto;
-
-  background:#020617;
-}
-
-
-/* ===== MENSAJES ===== */
-
-.msg{
-
-  max-width:82%;
-
-  padding:10px 14px;
-
-  border-radius:16px;
-
-  font-size:14px;
-  line-height:1.5;
-
-  animation:fade .2s ease;
-}
-
-@keyframes fade{
-  from{opacity:0;transform:translateY(5px)}
-  to{opacity:1}
-}
-
-
-/* ===== USER ===== */
-
-.user{
-
-  align-self:flex-end;
-
-  background:
-    linear-gradient(135deg,#2563eb,#1d4ed8);
-
-  color:white;
-
-  border-bottom-right-radius:4px;
-}
-
-
-/* ===== BOT ===== */
-
-.bot{
-
-  align-self:flex-start;
-
-  background:#0f172a;
-
-  color:#e5e7eb;
-
   border:1px solid #1e293b;
 
-  border-bottom-left-radius:4px;
+  z-index: 5;
 }
 
 
-/* ===== TYPING ===== */
+/* ============================
+   HABLANDO + MOVIMIENTO
+============================ */
 
-.typing{
-  display:flex;
-  gap:5px;
-  font-weight:bold;
-  opacity:.7;
+#floating-avatar.avatar-speaking{
+  animation: talkFloat .6s infinite alternate;
 }
 
-.typing span{
-  animation:blink 1.4s infinite both;
-}
-
-.typing span:nth-child(2){animation-delay:.2s}
-.typing span:nth-child(3){animation-delay:.4s}
-
-@keyframes blink{
-  0%{opacity:.2}
-  20%{opacity:1}
-  100%{opacity:.2}
-}
-
-
-/* ===== INPUT ===== */
-
-.input-area{
-
-  min-height:68px;
-
-  display:flex;
-  gap:8px;
-
-  padding:12px;
-
-  background:#020617;
-
-  border-top:1px solid #1e293b;
-}
-
-.input-area input{
-
-  flex:1;
-
-  padding:12px 14px;
-
-  border-radius:14px;
-
-  background:#020617;
-
-  color:white;
-
-  border:1px solid #1e293b;
-
-  outline:none;
-}
-
-.input-area input:focus{
-  border-color:#2563eb;
-}
-
-.input-area button{
-
-  width:46px;
-  height:46px;
-
-  border:none;
-
-  border-radius:14px;
-
-  background:#2563eb;
-
-  color:white;
-
-  font-size:17px;
-
-  cursor:pointer;
-}
-
-.input-area button:hover{
-  background:#1d4ed8;
+@keyframes talkFloat{
+  from{transform:translateY(0)}
+  to{transform:translateY(-6px)}
 }
