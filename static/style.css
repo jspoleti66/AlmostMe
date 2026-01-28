@@ -7,7 +7,6 @@
 
 body{
   background:linear-gradient(160deg,#020617,#020617,#020617);
-
   height:100vh;
 
   display:flex;
@@ -71,12 +70,10 @@ body{
   border-radius:50%;
 
   overflow:hidden;
-
-  animation:float 6s ease-in-out infinite;
 }
 
 
-/* Fondo logo */
+/* Fondo logo visible */
 
 .logo-bg{
 
@@ -87,36 +84,36 @@ body{
 
   object-fit:cover;
 
-  opacity:.25;
+  opacity:.35;
 
-  filter:blur(1px);
+  z-index:1;
 }
 
 
-/* Video */
+/* Video centrado */
 
 .avatar-video{
 
-  width:92px;
-  height:92px;
+  width:90px;
+  height:90px;
 
   border-radius:50%;
 
   object-fit:cover;
 
-  z-index:2;
+  z-index:3;
 
   border:3px solid #2563eb;
 
   background:#020617;
 
-  box-shadow:0 0 25px #2563eb66;
+  box-shadow:0 0 20px #2563eb55;
 
-  transition:.3s;
+  transition:all .25s ease;
 }
 
 
-/* Glow */
+/* Glow base */
 
 .logo-glow{
 
@@ -125,24 +122,15 @@ body{
   width:120px;
   height:120px;
 
-  background:#2563eb44;
+  background:#2563eb33;
 
-  filter:blur(45px);
+  filter:blur(40px);
 
   border-radius:50%;
 
-  opacity:.6;
+  opacity:.4;
 
-  z-index:1;
-}
-
-
-/* ===== FLOAT ===== */
-
-@keyframes float{
-  0%{transform:translateY(0)}
-  50%{transform:translateY(-6px)}
-  100%{transform:translateY(0)}
+  z-index:2;
 }
 
 
@@ -162,28 +150,32 @@ body{
 }
 
 
-/* ===== SPEAKING ===== */
+/* ===== SPEAKING EFFECT ===== */
 
 .avatar-speaking .avatar-video{
 
+  border-color:#60a5fa;
+
   box-shadow:
-    0 0 40px #3b82f6,
-    0 0 70px #3b82f688;
+    0 0 25px #60a5fa,
+    0 0 50px #60a5fa88;
 }
 
 .avatar-speaking .logo-glow{
-  animation:pulse .8s infinite alternate;
+  animation:speakingPulse .7s infinite alternate;
 }
 
 
-@keyframes pulse{
+@keyframes speakingPulse{
+
   from{
-    transform:scale(1);
     opacity:.4;
+    transform:scale(1);
   }
+
   to{
-    transform:scale(1.15);
     opacity:1;
+    transform:scale(1.08);
   }
 }
 
