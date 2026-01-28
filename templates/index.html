@@ -3,15 +3,11 @@
 
 <head>
   <meta charset="UTF-8">
-
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <title>AlmostMe – Clon Interactivo</title>
 
-  <!-- Estilos -->
   <link rel="stylesheet" href="/static/style.css">
-
-  <!-- Favicon -->
   <link rel="icon" href="/static/favicon.ico">
 </head>
 
@@ -19,44 +15,30 @@
 
   <div class="app">
 
-    <!-- HEADER CON AVATAR -->
-    <header class="header">
+    <!-- ZONA AVATAR -->
+    <section class="avatar-section">
 
-      <div class="header-left">
+      <div class="avatar-glow"></div>
 
-        <!-- VIDEO AVATAR -->
-        <div class="avatar-container">
+      <video
+        class="avatar-main"
+        src="/static/avatar.mp4"
+        autoplay
+        muted
+        loop
+        playsinline
+      ></video>
 
-          <video
-            class="avatar-video"
-            src="/static/avatar.mp4"
-            autoplay
-            muted
-            loop
-            playsinline
-          ></video>
-
-        </div>
-
-        <!-- INFO -->
-        <div class="header-info">
-
-          <div class="header-title">
-            AlmostMe
-          </div>
-
-          <div class="status">
-            ● Online
-          </div>
-
-        </div>
-
+      <div class="avatar-name">
+        AlmostMe · Online
       </div>
 
-    </header>
+    </section>
+
 
     <!-- CHAT -->
     <main id="chat" class="chat"></main>
+
 
     <!-- INPUT -->
     <form id="form" class="input-area">
@@ -77,9 +59,7 @@
 
   </div>
 
-  <!-- Script -->
   <script src="/static/script.js"></script>
 
 </body>
-
 </html>
