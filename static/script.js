@@ -2,10 +2,31 @@ const chat = document.getElementById("chat");
 const form = document.getElementById("form");
 const input = document.getElementById("input");
 
+// Avatar
+const avatar = document.getElementById("avatar");
+
 let typingDiv = null;
 
+
 /* ===============================
-   Agregar mensaje al chat
+   Activar / desactivar speaking
+================================ */
+
+function startSpeaking(){
+  if(avatar){
+    avatar.classList.add("avatar-speaking");
+  }
+}
+
+function stopSpeaking(){
+  if(avatar){
+    avatar.classList.remove("avatar-speaking");
+  }
+}
+
+
+/* ===============================
+   Agregar mensaje
 ================================ */
 
 function addMessage(text, type){
@@ -17,15 +38,15 @@ function addMessage(text, type){
   const div = document.createElement("div");
   div.className = `msg ${type}`;
 
-  // Soporta saltos de línea
   div.innerHTML = text.replace(/\n/g, "<br>");
 
   chat.appendChild(div);
   scrollBottom();
 }
 
+
 /* ===============================
-   Mostrar "escribiendo..."
+   Mostrar "escribiendo"
 ================================ */
 
 function showTyping(){
@@ -41,10 +62,14 @@ function showTyping(){
 
   chat.appendChild(typingDiv);
   scrollBottom();
+
+  // Activa avatar
+  startSpeaking();
 }
 
+
 /* ===============================
-   Ocultar "escribiendo..."
+   Ocultar "escribiendo"
 ================================ */
 
 function hideTyping(){
@@ -53,18 +78,23 @@ function hideTyping(){
     typingDiv.remove();
     typingDiv = null;
   }
+
+  // Desactiva avatar
+  stopSpeaking();
 }
 
+
 /* ===============================
-   Scroll automático
+   Scroll
 ================================ */
 
 function scrollBottom(){
   chat.scrollTop = chat.scrollHeight;
 }
 
+
 /* ===============================
-   Envío del formulario
+   Envío
 ================================ */
 
 form.addEventListener("submit", async (e)=>{
@@ -75,7 +105,7 @@ form.addEventListener("submit", async (e)=>{
 
   if(!text) return;
 
-  // Mensaje del usuario
+  // Usuario
   addMessage(text, "user");
 
   input.value = "";
@@ -98,7 +128,7 @@ form.addEventListener("submit", async (e)=>{
 
     hideTyping();
 
-    // 🔑 IMPORTANTE: leer "content"
+    // Bot
     addMessage(data.content || "Sin respuesta", "bot");
 
   }
