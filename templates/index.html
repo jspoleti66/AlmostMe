@@ -15,38 +15,37 @@
 
   <div class="app">
 
+    <!-- HEADER -->
+    <header class="chat-header">
+
+      <img src="/static/logo.png" class="chat-logo">
+
+      <div class="chat-status">
+        ● Online
+      </div>
+
+    </header>
+
+
+    <!-- AVATAR -->
+    <div id="avatar" class="avatar-container">
+
+      <div class="avatar-glow"></div>
+
+      <video
+        class="avatar-main"
+        src="/static/avatar.mp4"
+        autoplay
+        muted
+        loop
+        playsinline
+      ></video>
+
+    </div>
+
+
     <!-- CHAT -->
-    <main id="chat" class="chat">
-
-      <!-- TOP INFO -->
-      <div class="chat-header">
-
-        <img src="/static/logo.png" class="chat-logo">
-
-        <div class="chat-status">
-          ● Online
-        </div>
-
-      </div>
-
-
-      <!-- AVATAR -->
-      <div id="chat-avatar" class="avatar-container">
-
-        <div class="avatar-glow"></div>
-
-        <video
-          class="avatar-main"
-          src="/static/avatar.mp4"
-          autoplay
-          muted
-          loop
-          playsinline
-        ></video>
-
-      </div>
-
-    </main>
+    <main id="chat" class="chat"></main>
 
 
     <!-- INPUT -->
