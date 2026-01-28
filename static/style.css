@@ -346,3 +346,34 @@ body{
   from{transform:translateY(0)}
   to{transform:translateY(-6px)}
 }
+
+/* ==========================
+   TOP BAR
+========================== */
+
+.top-bar{
+
+  height:60px;
+
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+
+  padding:0 16px;
+
+  background:#020617;
+
+  border-bottom:1px solid #1e293b;
+}
+
+.top-logo{
+  height:34px;
+  object-fit:contain;
+}
+
+.status{
+  color:#22c55e;
+  font-size:13px;
+  font-weight:600;
+}
+
