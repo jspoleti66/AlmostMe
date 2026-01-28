@@ -139,24 +139,86 @@ SYSTEM_PROMPT = load_txt(
 
 
 # =====================================================
-# CONTEXT
+# UTILS
 # =====================================================
 
-def build_global_context():
+def normalize(text):
 
-    blocks = []
+    text = text.lower()
+
+    text = re.sub(r"[^\w\sáéíóúñ]", "", text)
+
+    return text
+
+
+def score_domain(text, domain_content):
+
+    t = set(normalize(text).split())
+    d = set(normalize(domain_content).split())
+
+    if not d:
+        return 0
+
+    return len(t & d)
+
+
+# =====================================================
+# DOMAIN MATCHING
+# =====================================================
+
+def find_best_domain(message):
+
+    scores = []
 
     for d in DOMAINS:
 
+        s = score_domain(message, d["content"])
+
+        scores.append((s, d))
+
+    scores.sort(reverse=True, key=lambda x: x[0])
+
+    if scores and scores[0][0] > 0:
+        return scores[0][1]
+
+    return None
+
+
+# =====================================================
+# CONTEXT BUILDER
+# =====================================================
+
+def build_context(message, use_fallback=False):
+
+    blocks = []
+
+    best = find_best_domain(message)
+
+    if best and not use_fallback:
+
         blocks.append(
             f"""
+══════════════════════════════════════
+DOMINIO PRINCIPAL: {best['name']}
+══════════════════════════════════════
+
+{best['content']}
+"""
+        )
+
+    else:
+
+        for d in DOMAINS:
+
+            blocks.append(
+                f"""
 ══════════════════════════════════════
 DOMINIO: {d['name']}
 ══════════════════════════════════════
 
 {d['content']}
 """
-        )
+            )
 
     return (
         f"{SYSTEM_PROMPT}\n\n"
@@ -165,15 +227,6 @@ DOMINIO: {d['name']}
         "══════════════════════════════════════\n\n"
         + "\n".join(blocks)
     )
-
-
-# =====================================================
-# UTILS
-# =====================================================
-
-def normalize(text):
-
-    return re.sub(r"[^\w\s]", "", text.lower())
 
 
 # =====================================================
@@ -257,7 +310,7 @@ def query_model(history, message):
     )
 
     messages = [
-        SystemMessage(content=build_global_context())
+        SystemMessage(content=build_context(message))
     ]
 
     limit = CONFIG["history_limit"]
@@ -290,7 +343,38 @@ def query_model(history, message):
         top_p=0.05
     )
 
-    return response.choices[0].message.content.strip()
+
+    answer = response.choices[0].message.content.strip()
+
+
+    # ================================
+    # FALLBACK AUTOMATICO
+    # ================================
+
+    fail_phrases = [
+        "no tengo información",
+        "no lo sé",
+        "no tengo datos",
+        "no está definido"
+    ]
+
+    if any(p in answer.lower() for p in fail_phrases):
+
+        messages[0] = SystemMessage(
+            content=build_context(message, use_fallback=True)
+        )
+
+        response = client.complete(
+            model="Meta-Llama-3.1-8B-Instruct",
+            messages=messages,
+            temperature=0.05,
+            max_tokens=400,
+            top_p=0.05
+        )
+
+        answer = response.choices[0].message.content.strip()
+
+    return answer
 
 
 # =====================================================
@@ -351,21 +435,14 @@ def chat():
                 "content": "No tengo manuales."
             })
 
-        if len(titles) <= 3:
+        txt = "Tengo estos manuales:\n\n"
 
-            txt = "Tengo estos manuales:\n\n"
-
-            for t in titles:
-                txt += f"• {t}\n"
-
-            return jsonify({
-                "type": "text",
-                "content": txt.strip()
-            })
+        for t in titles:
+            txt += f"• {t}\n"
 
         return jsonify({
             "type": "text",
-            "content": "Tengo varios manuales. Decime cuál buscás."
+            "content": txt.strip()
         })
 
 
