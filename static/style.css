@@ -54,7 +54,45 @@ body{
   border-bottom:1px solid #1e293b;
 }
 
-/* Glow */
+
+/* ===== ESTADO HABLANDO ===== */
+
+.avatar-speaking .avatar-main{
+  box-shadow:
+    0 0 40px #2563eb,
+    0 0 80px #2563eb88;
+}
+
+.avatar-speaking .avatar-glow{
+  animation:talk 1s infinite alternate;
+}
+
+@keyframes talk{
+  from{
+    transform:scale(1);
+    opacity:.5;
+  }
+  to{
+    transform:scale(1.15);
+    opacity:1;
+  }
+}
+
+
+/* ===== FLOTACIÓN ===== */
+
+.avatar-main{
+  animation:float 6s ease-in-out infinite;
+}
+
+@keyframes float{
+  0%{transform:translateY(0px)}
+  50%{transform:translateY(-8px)}
+  100%{transform:translateY(0px)}
+}
+
+
+/* ===== GLOW ===== */
 
 .avatar-glow{
 
@@ -78,7 +116,8 @@ body{
   100%{opacity:.5}
 }
 
-/* Video principal */
+
+/* ===== VIDEO PRINCIPAL ===== */
 
 .avatar-main{
 
@@ -96,9 +135,12 @@ body{
   background:#020617;
 
   box-shadow:0 0 30px #2563eb55;
+
+  transition:all .3s ease;
 }
 
-/* Nombre */
+
+/* ===== NOMBRE ===== */
 
 .avatar-name{
 
@@ -153,7 +195,8 @@ body{
   to{opacity:1}
 }
 
-/* USER */
+
+/* ===== USER ===== */
 
 .user{
 
@@ -167,7 +210,8 @@ body{
   border-bottom-right-radius:4px;
 }
 
-/* BOT */
+
+/* ===== BOT ===== */
 
 .bot{
 
