@@ -2,8 +2,8 @@ const chat = document.getElementById("chat");
 const form = document.getElementById("form");
 const input = document.getElementById("input");
 
-// Avatar flotante
-const avatar = document.getElementById("floating-avatar");
+// Avatar
+const avatar = document.getElementById("chat-avatar");
 
 let typingDiv = null;
 
@@ -26,7 +26,7 @@ function stopSpeaking(){
 
 
 /* ===============================
-   Agregar mensaje
+   Mensajes
 ================================ */
 
 function addMessage(text, type){
@@ -41,7 +41,6 @@ function addMessage(text, type){
   div.innerHTML = text.replace(/\n/g, "<br>");
 
   chat.appendChild(div);
-
   scrollBottom();
 }
 
@@ -62,7 +61,6 @@ function showTyping(){
   `;
 
   chat.appendChild(typingDiv);
-
   scrollBottom();
 
   startSpeaking();
@@ -90,7 +88,7 @@ function scrollBottom(){
 
 
 /* ===============================
-   Submit
+   Envío
 ================================ */
 
 form.addEventListener("submit", async (e)=>{
@@ -101,27 +99,23 @@ form.addEventListener("submit", async (e)=>{
 
   if(!text) return;
 
-
-  // Usuario
   addMessage(text, "user");
 
   input.value = "";
 
   showTyping();
 
-
   try{
 
     const res = await fetch("/chat",{
       method: "POST",
       headers:{
-        "Content-Type":"application/json"
+        "Content-Type": "application/json"
       },
-      body:JSON.stringify({
-        message:text
+      body: JSON.stringify({
+        message: text
       })
     });
-
 
     const data = await res.json();
 
@@ -129,10 +123,10 @@ form.addEventListener("submit", async (e)=>{
 
     addMessage(data.content || "Sin respuesta", "bot");
 
+  }
+  catch(err){
 
-  }catch(err){
-
-    console.error(err);
+    console.error("Error:", err);
 
     hideTyping();
 
