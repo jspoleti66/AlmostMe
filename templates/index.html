@@ -15,41 +15,26 @@
 
   <div class="app">
 
-    <!-- HEADER -->
-    <header class="top-bar">
+    <!-- CHAT -->
+    <main id="chat" class="chat">
 
-      <img
-        src="/static/logo.png"
-        class="top-logo"
-        alt="AlmostMe"
-      >
+      <!-- AVATAR DENTRO DEL CHAT -->
+      <div id="chat-avatar">
 
-      <div class="status">
-        ● Online
+        <div class="avatar-glow"></div>
+
+        <video
+          class="avatar-main"
+          src="/static/avatar.mp4"
+          autoplay
+          muted
+          loop
+          playsinline
+        ></video>
+
       </div>
 
-    </header>
-
-
-    <!-- CHAT -->
-    <main id="chat" class="chat"></main>
-
-
-    <!-- AVATAR FLOTANTE -->
-    <div id="floating-avatar">
-
-      <div class="avatar-glow"></div>
-
-      <video
-        class="avatar-main"
-        src="/static/avatar.mp4"
-        autoplay
-        muted
-        loop
-        playsinline
-      ></video>
-
-    </div>
+    </main>
 
 
     <!-- INPUT -->
