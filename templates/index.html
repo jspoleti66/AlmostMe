@@ -2,7 +2,6 @@
 <html lang="es">
 
 <head>
-
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -10,44 +9,34 @@
 
   <link rel="stylesheet" href="/static/style.css">
   <link rel="icon" href="/static/favicon.ico">
-
 </head>
-
 
 <body>
 
-
   <div class="app">
 
-
-    <!-- ===============================
-         HEADER
-    =============================== -->
-
+    <!-- HEADER -->
     <header class="header">
 
-      <!-- Avatar -->
-
-      <div id="avatarBox" class="avatar-container">
+      <!-- AVATAR -->
+      <div class="avatar-container" id="avatarBox">
 
         <img
           src="/static/avatar.jpg"
+          alt="Avatar"
           class="avatar"
-          alt="Avatar AlmostMe"
         >
 
       </div>
 
+      <!-- INFO -->
+      <div class="header-info">
 
-      <!-- Status -->
-
-      <div class="status">
-
-        <div class="status-name">
+        <div class="header-title">
           AlmostMe
         </div>
 
-        <div class="status-online">
+        <div class="status">
           ● Online
         </div>
 
@@ -56,25 +45,12 @@
     </header>
 
 
-    <!-- ===============================
-         CHAT
-    =============================== -->
-
-    <main
-      id="chat"
-      class="chat"
-    ></main>
+    <!-- CHAT -->
+    <main id="chat" class="chat"></main>
 
 
-    <!-- ===============================
-         INPUT
-    =============================== -->
-
-    <form
-      id="form"
-      class="input-area"
-      autocomplete="off"
-    >
+    <!-- INPUT -->
+    <form id="form" class="input-area">
 
       <input
         id="input"
@@ -90,17 +66,9 @@
 
     </form>
 
-
   </div>
-
-
-  <!-- ===============================
-       SCRIPT
-  =============================== -->
 
   <script src="/static/script.js"></script>
 
-
 </body>
-
 </html>
