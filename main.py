@@ -105,11 +105,15 @@ def find_best_domain(message):
     return scores[0][1] if scores and scores[0][0] > 1 else None
 
 def find_manual(message):
-    text = f" {normalize(message)} "
+    text = normalize(message)
     for manual in MANUALES:
-        ids = [i.strip() for i in manual.get("id", "").lower().split(",")]
-        if any(f" {key} " in text for key in ids):
-            return manual
+        ids = [i.strip().lower() for i in manual.get("id", "").split(",")]
+        for key in ids:
+            if not key: continue
+            # Fix: Captura palabra exacta o plural simple (ej: auto o autos)
+            pattern = rf"\b{key}s?\b"
+            if re.search(pattern, text):
+                return manual
     return None
 
 def list_manual_titles():
@@ -117,7 +121,7 @@ def list_manual_titles():
 
 def mentions_manual_intent(text):
     t = normalize(text)
-    # Detecta "manual", "manuel", "guia", "lista", etc.
+    # Fix: Captura manual, manuel, guia, lista, listado
     return bool(re.search(r"(manu|guia|lista|instruc|docu)", t))
 
 # =====================================================
@@ -145,7 +149,7 @@ def query_model(history, message):
         )
         return response.choices[0].message.content.strip()
     except Exception:
-        return "Lo siento, no puedo procesar eso ahora."
+        return "Lo siento, no puedo responder en este momento."
 
 # =====================================================
 # ROUTES
@@ -166,22 +170,22 @@ def chat():
         history = session.get("history", [])
         norm = normalize(message)
 
-        # 1. Filtro de Seguridad / Meta-info
+        # 1. Filtro Meta-información
         meta_triggers = ["que informacion guard", "que sabes de mi", "tus archivos"]
         if any(t in norm for t in meta_triggers):
             return jsonify({"type": "text", "content": "Solo accedo a manuales y conocimiento técnico autorizado."})
 
-        # 2. Lógica de Manuales (Intercepta "manuales", "manueles", "listado", etc.)
-        # Si menciona la intención O el usuario responde "si" a una oferta previa
+        # 2. Lógica de Manuales (Prioridad Máxima)
+        # Primero: ¿Busca uno específico? (ej: "el del auto", "manual piscina")
+        manual_especifico = find_manual(message)
+        if manual_especifico:
+            return jsonify({
+                "type": "vcard", 
+                "content": f"<b>{manual_especifico['title']}</b><br>{manual_especifico['summary']}<br><a href='{manual_especifico['url']}' target='_blank'>Ver Manual</a>"
+            })
+
+        # Segundo: ¿Pide la lista o dijo "si" a una oferta?
         if mentions_manual_intent(message) or norm in ["si", "cuales", "que mas"]:
-            manual = find_manual(message)
-            if manual:
-                return jsonify({
-                    "type": "vcard", 
-                    "content": f"<b>{manual['title']}</b><br>{manual['summary']}<br><a href='{manual['url']}' target='_blank'>Ver Manual</a>"
-                })
-            
-            # Si no pidió uno específico, mostramos la lista REAL del JSON
             titulos = list_manual_titles()
             if titulos:
                 return jsonify({
@@ -189,18 +193,18 @@ def chat():
                     "content": "Los únicos manuales que tengo disponibles son:\n• " + "\n• ".join(titulos)
                 })
 
-        # 3. Consulta al LLM (Para preguntas sobre mantenimiento, etc.)
+        # 3. Consulta al LLM (Para preguntas de mantenimiento o charla general)
         answer = query_model(history, message)
         
         history.append({"role": "user", "content": message})
         history.append({"role": "assistant", "content": answer})
-        session["history"] = history[-10:] # Mantener historial corto para evitar errores de sesión
+        session["history"] = history[-10:]
 
         return jsonify({"type": "text", "content": answer})
 
     except Exception:
         print(traceback.format_exc())
-        return jsonify({"type": "text", "content": "Error de conexión."}), 500
+        return jsonify({"type": "text", "content": "Hubo un error de conexión."}), 500
 
 if __name__ == "__main__":
     app.run(debug=True)
