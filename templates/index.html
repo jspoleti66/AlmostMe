@@ -2,6 +2,7 @@
 <html lang="es">
 
 <head>
+
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -9,30 +10,45 @@
 
   <link rel="stylesheet" href="/static/style.css">
   <link rel="icon" href="/static/favicon.ico">
+
 </head>
+
 
 <body>
 
+
   <div class="app">
 
-    <!-- HEADER -->
-    <header class="top-bar">
 
-      <div class="brand">
+    <!-- ===============================
+         HEADER
+    =============================== -->
 
-        <!-- AVATAR -->
-        <div class="avatar-container" id="avatarBox">
-          <img
-            src="/static/avatar.jpg"
-            alt="AlmostMe"
-            class="avatar"
-            id="avatar"
-          >
+    <header class="header">
+
+      <!-- Avatar -->
+
+      <div id="avatarBox" class="avatar-container">
+
+        <img
+          src="/static/avatar.jpg"
+          class="avatar"
+          alt="Avatar AlmostMe"
+        >
+
+      </div>
+
+
+      <!-- Status -->
+
+      <div class="status">
+
+        <div class="status-name">
+          AlmostMe
         </div>
 
-        <div class="brand-info">
-          <img src="/static/logo.png" class="logo">
-          <span class="status">● Online</span>
+        <div class="status-online">
+          ● Online
         </div>
 
       </div>
@@ -40,12 +56,25 @@
     </header>
 
 
-    <!-- CHAT -->
-    <main id="chat" class="chat"></main>
+    <!-- ===============================
+         CHAT
+    =============================== -->
+
+    <main
+      id="chat"
+      class="chat"
+    ></main>
 
 
-    <!-- INPUT -->
-    <form id="form" class="input-area">
+    <!-- ===============================
+         INPUT
+    =============================== -->
+
+    <form
+      id="form"
+      class="input-area"
+      autocomplete="off"
+    >
 
       <input
         id="input"
@@ -61,9 +90,17 @@
 
     </form>
 
+
   </div>
+
+
+  <!-- ===============================
+       SCRIPT
+  =============================== -->
 
   <script src="/static/script.js"></script>
 
+
 </body>
+
 </html>
