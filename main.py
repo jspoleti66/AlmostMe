@@ -152,70 +152,6 @@ def normalize(text):
 
 
 # =====================================================
-# SIMILARITY (LEVENSHTEIN)
-# =====================================================
-
-def levenshtein(a, b):
-
-    if a == b:
-        return 0
-
-    if len(a) < len(b):
-        return levenshtein(b, a)
-
-    if len(b) == 0:
-        return len(a)
-
-    prev = list(range(len(b) + 1))
-
-    for i, c1 in enumerate(a):
-
-        curr = [i + 1]
-
-        for j, c2 in enumerate(b):
-
-            ins = prev[j + 1] + 1
-            delt = curr[j] + 1
-            sub = prev[j] + (c1 != c2)
-
-            curr.append(min(ins, delt, sub))
-
-        prev = curr
-
-    return prev[-1]
-
-
-def similar(a, b, max_dist=2):
-
-    return levenshtein(a, b) <= max_dist
-
-
-# =====================================================
-# MANUAL INTENT DETECTOR (HÍBRIDO)
-# =====================================================
-
-def mentions_manual_intent(text):
-
-    words = normalize(text).split()
-
-    targets = ["manual", "manuales"]
-
-    for w in words:
-
-        # Raíz fuerte
-        if len(w) >= 5 and "manu" in w:
-            return True
-
-        # Fuzzy backup
-        for t in targets:
-
-            if similar(w, t, 2):
-                return True
-
-    return False
-
-
-# =====================================================
 # CONTEXT BUILDER
 # =====================================================
 
@@ -328,8 +264,25 @@ def list_manual_titles():
 
 
 # =====================================================
-# LIST INTENT
+# INTENT
 # =====================================================
+
+def mentions_manual_intent(text):
+
+    triggers = [
+        "manual",
+        "manuales",
+        "guia",
+        "guias",
+        "instructivo",
+        "documentacion",
+        "instrucciones"
+    ]
+
+    t = normalize(text)
+
+    return any(k in t for k in triggers)
+
 
 def is_ambiguous_list(text):
 
@@ -395,7 +348,6 @@ def query_model(history, message):
 
         answer = response.choices[0].message.content.strip()
 
-
         return answer
 
 
@@ -440,7 +392,37 @@ def chat():
         history = session.get("history", [])
 
 
-        # Lista ambigua
+        norm = normalize(message)
+
+
+        # ===============================
+        # BLOQUEO META-INFORMACIÓN
+        # ===============================
+
+        meta_triggers = [
+            "que informacion guard",
+            "que datos guard",
+            "que sabes de mi",
+            "como funcionas",
+            "como operas",
+            "que archivos",
+            "donde guardas",
+            "tu memoria",
+            "tu conocimiento"
+        ]
+
+        if any(k in norm for k in meta_triggers):
+
+            return jsonify({
+                "type": "text",
+                "content": "No tengo información sobre eso."
+            })
+
+
+        # ===============================
+        # LISTA AMBIGUA
+        # ===============================
+
         if is_ambiguous_list(message):
 
             return jsonify({
@@ -449,7 +431,33 @@ def chat():
             })
 
 
-        # Lista manuales (híbrido)
+        # ===============================
+        # MANUAL ESPECÍFICO (PRIMERO)
+        # ===============================
+
+        manual = find_manual(message)
+
+        if manual:
+
+            card = render_vcard(manual)
+
+            history.extend([
+                {"role": "user", "content": message},
+                {"role": "assistant", "content": card}
+            ])
+
+            session["history"] = history[-12:]
+
+            return jsonify({
+                "type": "card",
+                "content": card
+            })
+
+
+        # ===============================
+        # LISTA DE MANUALES (DESPUÉS)
+        # ===============================
+
         if mentions_manual_intent(message):
 
             titles = list_manual_titles()
@@ -472,27 +480,10 @@ def chat():
             })
 
 
-        # Manual individual
-        manual = find_manual(message)
+        # ===============================
+        # MODELO
+        # ===============================
 
-        if manual:
-
-            card = render_vcard(manual)
-
-            history.extend([
-                {"role": "user", "content": message},
-                {"role": "assistant", "content": card}
-            ])
-
-            session["history"] = history[-12:]
-
-            return jsonify({
-                "type": "card",
-                "content": card
-            })
-
-
-        # Modelo
         answer = query_model(history, message)
 
 
