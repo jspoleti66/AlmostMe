@@ -1,4 +1,6 @@
-/* RESET */
+/* ===============================
+   RESET
+================================ */
 
 * {
   box-sizing: border-box;
@@ -7,10 +9,13 @@
   font-family: system-ui, sans-serif;
 }
 
-/* BODY */
+
+/* ===============================
+   BODY
+================================ */
 
 body {
-  background: linear-gradient(160deg, #020617, #020617);
+  background: linear-gradient(160deg, #020617, #020617, #020617);
   height: 100vh;
 
   display: flex;
@@ -18,7 +23,10 @@ body {
   align-items: center;
 }
 
-/* APP */
+
+/* ===============================
+   APP
+================================ */
 
 .app {
   width: 100%;
@@ -39,116 +47,144 @@ body {
   overflow: hidden;
 }
 
-/* ===== HEADER ===== */
 
-.top-bar {
-  height: 78px;
+/* ===============================
+   HEADER
+================================ */
+
+.header {
+  height: 64px;
 
   display: flex;
   align-items: center;
 
-  padding: 0 16px;
+  gap: 12px;
 
-  border-bottom: 1px solid #1e293b;
+  padding: 0 14px;
 
   background: #020617;
+
+  border-bottom: 1px solid #1e293b;
 }
 
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
 
-/* ===== AVATAR ===== */
+/* ===============================
+   AVATAR
+================================ */
 
 .avatar-container {
   position: relative;
 
-  width: 64px;
-  height: 64px;
+  width: 48px;
+  height: 48px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
+
 .avatar {
-  width: 64px;
-  height: 64px;
+  width: 48px;
+  height: 48px;
 
   border-radius: 50%;
   object-fit: cover;
 
-  position: relative;
+  border: 2px solid #2563eb;
+
+  background: #020617;
+
   z-index: 2;
+
+  animation: breathing 6s ease-in-out infinite;
 }
 
-/* HABLANDO */
+
+/* Respiración */
+
+@keyframes breathing {
+
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.03); }
+  100% { transform: scale(1); }
+
+}
+
+
+/* Hablando */
 
 .avatar-container.speaking .avatar {
-  animation: micro-vibration 0.18s infinite linear;
+
+  box-shadow:
+    0 0 10px #2563ebaa,
+    0 0 20px #2563eb55;
+
+  border-color: #60a5fa;
 }
 
-.avatar-container.speaking::after {
+
+/* Halo */
+
+.avatar-container::after {
+
   content: "";
 
   position: absolute;
-  inset: -6px;
+
+  width: 100%;
+  height: 100%;
 
   border-radius: 50%;
 
-  border: 2px solid rgba(37,99,235,0.6);
+  background: radial-gradient(
+    circle,
+    rgba(96,165,250,.4),
+    transparent 70%
+  );
 
-  animation: pulse-ring 1.1s ease-out infinite;
+  opacity: 0;
+
+  transition: .3s;
 }
 
-/* ANIMACIONES */
 
-@keyframes micro-vibration {
-
-  0%   { transform: translate(0,0) scale(1); }
-  20%  { transform: translate(.6px,-.4px) scale(1.01); }
-  40%  { transform: translate(-.4px,.6px) scale(1.015); }
-  60%  { transform: translate(.5px,.4px) scale(1.01); }
-  80%  { transform: translate(-.3px,-.5px) scale(1.005); }
-  100% { transform: translate(0,0) scale(1); }
-
+.avatar-container.speaking::after {
+  opacity: 1;
 }
 
-@keyframes pulse-ring {
 
-  from {
-    transform: scale(1);
-    opacity: .55;
-  }
-
-  to {
-    transform: scale(1.35);
-    opacity: 0;
-  }
-}
-
-/* ===== BRAND ===== */
-
-.brand-info {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.logo {
-  height: 22px;
-}
+/* ===============================
+   STATUS
+================================ */
 
 .status {
-  font-size: 12px;
-  color: #22c55e;
-  font-weight: 600;
+  display: flex;
+  flex-direction: column;
 }
 
-/* ===== CHAT ===== */
+
+.status-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #e5e7eb;
+}
+
+
+.status-online {
+  font-size: 11px;
+  color: #22c55e;
+}
+
+
+/* ===============================
+   CHAT
+================================ */
 
 .chat {
   flex: 1;
 
-  padding: 16px 14px;
+  padding: 14px 12px;
 
   display: flex;
   flex-direction: column;
@@ -159,7 +195,10 @@ body {
   background: #020617;
 }
 
-/* MENSAJES */
+
+/* ===============================
+   MESSAGES
+================================ */
 
 .msg {
   max-width: 82%;
@@ -174,17 +213,20 @@ body {
   animation: fade .2s ease;
 }
 
+
 @keyframes fade {
 
   from {
     opacity: 0;
-    transform: translateY(5px);
+    transform: translateY(6px);
   }
 
   to {
     opacity: 1;
   }
+
 }
+
 
 /* USER */
 
@@ -192,12 +234,13 @@ body {
 
   align-self: flex-end;
 
-  background: linear-gradient(135deg,#2563eb,#1d4ed8);
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
 
   color: white;
 
   border-bottom-right-radius: 4px;
 }
+
 
 /* BOT */
 
@@ -214,11 +257,52 @@ body {
   border-bottom-left-radius: 4px;
 }
 
-/* ===== INPUT ===== */
+
+/* ===============================
+   TYPING
+================================ */
+
+.typing {
+
+  display: flex;
+  gap: 5px;
+
+  font-weight: bold;
+
+  opacity: .7;
+}
+
+
+.typing span {
+  animation: blink 1.4s infinite both;
+}
+
+
+.typing span:nth-child(2) {
+  animation-delay: .2s;
+}
+
+.typing span:nth-child(3) {
+  animation-delay: .4s;
+}
+
+
+@keyframes blink {
+
+  0%   { opacity: .2; }
+  20%  { opacity: 1; }
+  100% { opacity: .2; }
+
+}
+
+
+/* ===============================
+   INPUT
+================================ */
 
 .input-area {
 
-  min-height: 68px;
+  min-height: 64px;
 
   display: flex;
   gap: 8px;
@@ -229,6 +313,7 @@ body {
 
   border-top: 1px solid #1e293b;
 }
+
 
 .input-area input {
 
@@ -247,14 +332,16 @@ body {
   outline: none;
 }
 
+
 .input-area input:focus {
   border-color: #2563eb;
 }
 
+
 .input-area button {
 
-  width: 46px;
-  height: 46px;
+  width: 44px;
+  height: 44px;
 
   border: none;
 
@@ -268,6 +355,7 @@ body {
 
   cursor: pointer;
 }
+
 
 .input-area button:hover {
   background: #1d4ed8;
