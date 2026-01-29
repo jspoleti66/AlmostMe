@@ -152,10 +152,13 @@ def normalize(text):
 
 
 # =====================================================
-# LEVENSHTEIN + FUZZY
+# SIMILARITY (LEVENSHTEIN)
 # =====================================================
 
 def levenshtein(a, b):
+
+    if a == b:
+        return 0
 
     if len(a) < len(b):
         return levenshtein(b, a)
@@ -163,7 +166,7 @@ def levenshtein(a, b):
     if len(b) == 0:
         return len(a)
 
-    prev = range(len(b) + 1)
+    prev = list(range(len(b) + 1))
 
     for i, c1 in enumerate(a):
 
@@ -172,157 +175,49 @@ def levenshtein(a, b):
         for j, c2 in enumerate(b):
 
             ins = prev[j + 1] + 1
-            dele = curr[j] + 1
+            delt = curr[j] + 1
             sub = prev[j] + (c1 != c2)
 
-            curr.append(min(ins, dele, sub))
+            curr.append(min(ins, delt, sub))
 
         prev = curr
 
     return prev[-1]
 
 
-def similar(a, b, max_dist=1):
+def similar(a, b, max_dist=2):
 
     return levenshtein(a, b) <= max_dist
 
 
 # =====================================================
-# MANUAL DETECTION
+# MANUAL INTENT DETECTOR (HÍBRIDO)
 # =====================================================
 
-def mentions_manual_fuzzy(text):
+def mentions_manual_intent(text):
 
     words = normalize(text).split()
 
+    targets = ["manual", "manuales"]
+
     for w in words:
 
-        if similar(w, "manual", 1):
+        # Raíz fuerte
+        if len(w) >= 5 and "manu" in w:
             return True
 
-        if similar(w, "manuales", 2):
-            return True
+        # Fuzzy backup
+        for t in targets:
+
+            if similar(w, t, 2):
+                return True
 
     return False
-
-
-def extract_topic(text):
-
-    t = normalize(text)
-
-    t = re.sub(r"(manual(es)?|de|del|la|el|los|las)", "", t)
-
-    return t.strip()
-
-
-def find_manual_fuzzy(message):
-
-    topic = extract_topic(message)
-
-    if not topic:
-        return None
-
-    words = topic.split()
-
-    for manual in MANUALES:
-
-        title = normalize(manual["title"])
-
-        title_words = title.split()
-
-        matches = 0
-
-        for w in words:
-
-            for tw in title_words:
-
-                if similar(w, tw, 1):
-                    matches += 1
-
-        if matches >= 1:
-            return manual
-
-    return None
-
-
-# =====================================================
-# RENDER
-# =====================================================
-
-def render_vcard(manual):
-
-    return f"""
-<div class="vcard">
-  <strong>{manual['title']}</strong><br>
-  <span>{manual['summary']}</span><br>
-  <a href="{manual['url']}" target="_blank" rel="noopener">Abrir manual</a>
-</div>
-"""
-
-
-def list_manual_titles():
-
-    return [m["title"] for m in MANUALES]
-
-
-# =====================================================
-# INTENT
-# =====================================================
-
-def is_list_request(text):
-
-    keywords = [
-        "lista",
-        "todos",
-        "mostrame",
-        "mostrarlos",
-        "dame la lista",
-        "manuales",
-        "que manuales",
-        "qué manuales"
-    ]
-
-    t = normalize(text)
-
-    return any(k in t for k in keywords)
-
-
-def is_ambiguous_list(text):
-
-    t = normalize(text)
-
-    return "lista" in t and "manual" not in t
 
 
 # =====================================================
 # CONTEXT BUILDER
 # =====================================================
-
-def score_domain(text, domain_content):
-
-    t = set(normalize(text).split())
-    d = set(normalize(domain_content).split())
-
-    return len(t & d)
-
-
-def find_best_domain(message):
-
-    scores = []
-
-    for d in DOMAINS:
-
-        s = score_domain(message, d["content"])
-
-        scores.append((s, d))
-
-    scores.sort(reverse=True, key=lambda x: x[0])
-
-    if scores and scores[0][0] > 1:
-        return scores[0][1]
-
-    return None
-
 
 def build_context(message, use_fallback=False):
 
@@ -361,6 +256,86 @@ DOMINIO: {d['name']}
         "══════════════════════════════════════\n\n"
         + "\n".join(final_blocks[:4])
     )
+
+
+# =====================================================
+# DOMAIN MATCHING
+# =====================================================
+
+def score_domain(text, domain_content):
+
+    t = set(normalize(text).split())
+    d = set(normalize(domain_content).split())
+
+    if not d:
+        return 0
+
+    return len(t & d)
+
+
+def find_best_domain(message):
+
+    scores = []
+
+    for d in DOMAINS:
+
+        s = score_domain(message, d["content"])
+
+        scores.append((s, d))
+
+    scores.sort(reverse=True, key=lambda x: x[0])
+
+    if scores and scores[0][0] > 1:
+        return scores[0][1]
+
+    return None
+
+
+# =====================================================
+# MANUALES
+# =====================================================
+
+def find_manual(message):
+
+    text = normalize(message)
+
+    for manual in MANUALES:
+
+        ids = manual.get("id", "").lower().split(",")
+
+        for key in ids:
+
+            if key.strip() in text:
+                return manual
+
+    return None
+
+
+def render_vcard(manual):
+
+    return f"""
+<div class="vcard">
+  <strong>{manual['title']}</strong><br>
+  <span>{manual['summary']}</span><br>
+  <a href="{manual['url']}" target="_blank" rel="noopener">Abrir manual</a>
+</div>
+"""
+
+
+def list_manual_titles():
+
+    return [m["title"] for m in MANUALES]
+
+
+# =====================================================
+# LIST INTENT
+# =====================================================
+
+def is_ambiguous_list(text):
+
+    t = normalize(text)
+
+    return "lista" in t and "manual" not in t
 
 
 # =====================================================
@@ -418,7 +393,10 @@ def query_model(history, message):
         )
 
 
-        return response.choices[0].message.content.strip()
+        answer = response.choices[0].message.content.strip()
+
+
+        return answer
 
 
     except Exception as e:
@@ -471,8 +449,8 @@ def chat():
             })
 
 
-        # Lista manuales
-        if is_list_request(message) and mentions_manual_fuzzy(message):
+        # Lista manuales (híbrido)
+        if mentions_manual_intent(message):
 
             titles = list_manual_titles()
 
@@ -494,17 +472,8 @@ def chat():
             })
 
 
-        # Lista mal formada
-        if is_list_request(message) and not mentions_manual_fuzzy(message):
-
-            return jsonify({
-                "type": "text",
-                "content": "No entiendo con claridad tu consulta. ¿Podés reformularla?"
-            })
-
-
-        # Manual individual (fuzzy)
-        manual = find_manual_fuzzy(message)
+        # Manual individual
+        manual = find_manual(message)
 
         if manual:
 
@@ -520,15 +489,6 @@ def chat():
             return jsonify({
                 "type": "card",
                 "content": card
-            })
-
-
-        # Si menciona manual pero no existe
-        if mentions_manual_fuzzy(message):
-
-            return jsonify({
-                "type": "text",
-                "content": "No tengo información sobre ese manual."
             })
 
 
