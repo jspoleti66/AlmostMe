@@ -152,101 +152,102 @@ def normalize(text):
 
 
 # =====================================================
-# CONTEXT BUILDER (MEJORADO)
+# LEVENSHTEIN + FUZZY
 # =====================================================
 
-def build_context(message, use_fallback=False):
+def levenshtein(a, b):
 
-    blocks = []
+    if len(a) < len(b):
+        return levenshtein(b, a)
 
-    if not use_fallback:
+    if len(b) == 0:
+        return len(a)
 
-        best = find_best_domain(message)
+    prev = range(len(b) + 1)
 
-        if best:
-            blocks.append(best)
+    for i, c1 in enumerate(a):
 
-    # Siempre agregar dominios principales
-    for d in DOMAINS:
+        curr = [i + 1]
 
-        if d not in blocks:
-            blocks.append(d)
+        for j, c2 in enumerate(b):
 
-    final_blocks = []
+            ins = prev[j + 1] + 1
+            dele = curr[j] + 1
+            sub = prev[j] + (c1 != c2)
 
-    for d in blocks:
+            curr.append(min(ins, dele, sub))
 
-        final_blocks.append(
-            f"""
-══════════════════════════════════════
-DOMINIO: {d['name']}
-══════════════════════════════════════
+        prev = curr
 
-{d['content']}
-"""
-        )
+    return prev[-1]
 
-    return (
-        f"{SYSTEM_PROMPT}\n\n"
-        "══════════════════════════════════════\n"
-        "CONOCIMIENTO PERSONAL AUTORIZADO\n"
-        "══════════════════════════════════════\n\n"
-        + "\n".join(final_blocks[:4])  # límite
-    )
+
+def similar(a, b, max_dist=1):
+
+    return levenshtein(a, b) <= max_dist
 
 
 # =====================================================
-# DOMAIN MATCHING
+# MANUAL DETECTION
 # =====================================================
 
-def score_domain(text, domain_content):
+def mentions_manual_fuzzy(text):
 
-    t = set(normalize(text).split())
-    d = set(normalize(domain_content).split())
+    words = normalize(text).split()
 
-    if not d:
-        return 0
+    for w in words:
 
-    return len(t & d)
+        if similar(w, "manual", 1):
+            return True
 
+        if similar(w, "manuales", 2):
+            return True
 
-def find_best_domain(message):
-
-    scores = []
-
-    for d in DOMAINS:
-
-        s = score_domain(message, d["content"])
-
-        scores.append((s, d))
-
-    scores.sort(reverse=True, key=lambda x: x[0])
-
-    if scores and scores[0][0] > 1:
-        return scores[0][1]
-
-    return None
+    return False
 
 
-# =====================================================
-# MANUALES
-# =====================================================
+def extract_topic(text):
 
-def find_manual(message):
+    t = normalize(text)
 
-    text = normalize(message)
+    t = re.sub(r"(manual(es)?|de|del|la|el|los|las)", "", t)
+
+    return t.strip()
+
+
+def find_manual_fuzzy(message):
+
+    topic = extract_topic(message)
+
+    if not topic:
+        return None
+
+    words = topic.split()
 
     for manual in MANUALES:
 
-        ids = manual.get("id", "").lower().split(",")
+        title = normalize(manual["title"])
 
-        for key in ids:
+        title_words = title.split()
 
-            if key.strip() in text:
-                return manual
+        matches = 0
+
+        for w in words:
+
+            for tw in title_words:
+
+                if similar(w, tw, 1):
+                    matches += 1
+
+        if matches >= 1:
+            return manual
 
     return None
 
+
+# =====================================================
+# RENDER
+# =====================================================
 
 def render_vcard(manual):
 
@@ -274,9 +275,11 @@ def is_list_request(text):
         "lista",
         "todos",
         "mostrame",
+        "mostrarlos",
+        "dame la lista",
         "manuales",
-        "qué manuales",
-        "que manuales"
+        "que manuales",
+        "qué manuales"
     ]
 
     t = normalize(text)
@@ -292,7 +295,76 @@ def is_ambiguous_list(text):
 
 
 # =====================================================
-# MODEL (ROBUSTO)
+# CONTEXT BUILDER
+# =====================================================
+
+def score_domain(text, domain_content):
+
+    t = set(normalize(text).split())
+    d = set(normalize(domain_content).split())
+
+    return len(t & d)
+
+
+def find_best_domain(message):
+
+    scores = []
+
+    for d in DOMAINS:
+
+        s = score_domain(message, d["content"])
+
+        scores.append((s, d))
+
+    scores.sort(reverse=True, key=lambda x: x[0])
+
+    if scores and scores[0][0] > 1:
+        return scores[0][1]
+
+    return None
+
+
+def build_context(message, use_fallback=False):
+
+    blocks = []
+
+    if not use_fallback:
+
+        best = find_best_domain(message)
+
+        if best:
+            blocks.append(best)
+
+    for d in DOMAINS:
+
+        if d not in blocks:
+            blocks.append(d)
+
+    final_blocks = []
+
+    for d in blocks:
+
+        final_blocks.append(
+            f"""
+══════════════════════════════════════
+DOMINIO: {d['name']}
+══════════════════════════════════════
+
+{d['content']}
+"""
+        )
+
+    return (
+        f"{SYSTEM_PROMPT}\n\n"
+        "══════════════════════════════════════\n"
+        "CONOCIMIENTO PERSONAL AUTORIZADO\n"
+        "══════════════════════════════════════\n\n"
+        + "\n".join(final_blocks[:4])
+    )
+
+
+# =====================================================
+# MODEL
 # =====================================================
 
 def query_model(history, message):
@@ -346,34 +418,7 @@ def query_model(history, message):
         )
 
 
-        answer = response.choices[0].message.content.strip()
-
-
-        # Fallback semántico
-        fail_phrases = [
-            "no tengo información",
-            "no lo sé",
-            "no tengo datos"
-        ]
-
-        if any(p in answer.lower() for p in fail_phrases):
-
-            messages[0] = SystemMessage(
-                content=build_context(message, use_fallback=True)
-            )
-
-            response = client.complete(
-                model="Meta-Llama-3.1-8B-Instruct",
-                messages=messages,
-                temperature=0.05,
-                max_tokens=400,
-                top_p=0.05
-            )
-
-            answer = response.choices[0].message.content.strip()
-
-
-        return answer
+        return response.choices[0].message.content.strip()
 
 
     except Exception as e:
@@ -427,7 +472,7 @@ def chat():
 
 
         # Lista manuales
-        if is_list_request(message):
+        if is_list_request(message) and mentions_manual_fuzzy(message):
 
             titles = list_manual_titles()
 
@@ -449,8 +494,17 @@ def chat():
             })
 
 
-        # Manual individual
-        manual = find_manual(message)
+        # Lista mal formada
+        if is_list_request(message) and not mentions_manual_fuzzy(message):
+
+            return jsonify({
+                "type": "text",
+                "content": "No entiendo con claridad tu consulta. ¿Podés reformularla?"
+            })
+
+
+        # Manual individual (fuzzy)
+        manual = find_manual_fuzzy(message)
 
         if manual:
 
@@ -466,6 +520,15 @@ def chat():
             return jsonify({
                 "type": "card",
                 "content": card
+            })
+
+
+        # Si menciona manual pero no existe
+        if mentions_manual_fuzzy(message):
+
+            return jsonify({
+                "type": "text",
+                "content": "No tengo información sobre ese manual."
             })
 
 
