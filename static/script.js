@@ -1,71 +1,137 @@
+
+const chat = document.getElementById("chat");
+const form = document.getElementById("form");
+const input = document.getElementById("input");
+
+// Avatar
 const avatar = document.getElementById("avatar");
-const avatarBox = document.getElementById("avatarBox");
-const messages = document.getElementById("messages");
-const input = document.getElementById("userInput");
+
+let typingDiv = null;
 
 
-/* Simula envío al backend */
-async function sendMessage() {
+/* ===============================
+   Speaking
+================================ */
 
-  const text = input.value.trim();
-  if (!text) return;
+function startSpeaking(){
+  if(avatar){
+    avatar.classList.add("avatar-speaking");
+  }
+}
 
-  addUserMessage(text);
-  input.value = "";
+function stopSpeaking(){
+  if(avatar){
+    avatar.classList.remove("avatar-speaking");
+  }
+}
 
-  // Simular thinking
-  await sleep(500);
+
+/* ===============================
+   Mensajes
+================================ */
+
+function addMessage(text, type){
+
+  if(!text || text.trim() === ""){
+    text = "…";
+  }
+
+  const div = document.createElement("div");
+  div.className = `msg ${type}`;
+
+  div.innerHTML = text.replace(/\n/g, "<br>");
+
+  chat.appendChild(div);
+  scrollBottom();
+}
+
+
+/* ===============================
+   Typing
+================================ */
+
+function showTyping(){
+
+  typingDiv = document.createElement("div");
+  typingDiv.className = "msg bot typing";
+
+  typingDiv.innerHTML = `
+    <span>.</span>
+    <span>.</span>
+    <span>.</span>
+  `;
+
+  chat.appendChild(typingDiv);
+  scrollBottom();
 
   startSpeaking();
+}
 
-  // Simular respuesta
-  await sleep(2500);
 
-  const reply = "Esta es una respuesta de prueba del clon.";
+function hideTyping(){
+
+  if(typingDiv){
+    typingDiv.remove();
+    typingDiv = null;
+  }
 
   stopSpeaking();
-  addBotMessage(reply);
 }
 
 
-/* Messages */
+/* ===============================
+   Scroll
+================================ */
 
-function addUserMessage(text) {
-  const div = document.createElement("div");
-  div.className = "msg-user";
-  div.textContent = text;
-  messages.appendChild(div);
-  scrollDown();
-}
-
-function addBotMessage(text) {
-  const div = document.createElement("div");
-  div.className = "msg-bot";
-  div.textContent = text;
-  messages.appendChild(div);
-  scrollDown();
-}
-
-function scrollDown() {
-  messages.scrollTop = messages.scrollHeight;
+function scrollBottom(){
+  chat.scrollTop = chat.scrollHeight;
 }
 
 
-/* Speaking Effects */
+/* ===============================
+   Envío
+================================ */
 
-function startSpeaking() {
-  avatar.classList.add("speaking");
-  avatarBox.classList.add("speaking");
-}
+form.addEventListener("submit", async (e)=>{
 
-function stopSpeaking() {
-  avatar.classList.remove("speaking");
-  avatarBox.classList.remove("speaking");
-}
+  e.preventDefault();
 
+  const text = input.value.trim();
 
-/* Utils */
+  if(!text) return;
 
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
+  addMessage(text, "user");
+
+  input.value = "";
+
+  showTyping();
+
+  try{
+
+    const res = await fetch("/chat",{
+      method: "POST",
+      headers:{
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        message: text
+      })
+    });
+
+    const data = await res.json();
+
+    hideTyping();
+
+    addMessage(data.content || "Sin respuesta", "bot");
+
+  }
+  catch(err){
+
+    console.error("Error:", err);
+
+    hideTyping();
+
+    addMessage("Error de conexión con el servidor", "bot");
+  }
+
+});
