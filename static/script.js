@@ -1,136 +1,71 @@
-const chat = document.getElementById("chat");
-const form = document.getElementById("form");
-const input = document.getElementById("input");
-
-// Avatar
 const avatar = document.getElementById("avatar");
-
-let typingDiv = null;
-
-
-/* ===============================
-   Speaking
-================================ */
-
-function startSpeaking(){
-  if(avatar){
-    avatar.classList.add("avatar-speaking");
-  }
-}
-
-function stopSpeaking(){
-  if(avatar){
-    avatar.classList.remove("avatar-speaking");
-  }
-}
+const avatarBox = document.getElementById("avatarBox");
+const messages = document.getElementById("messages");
+const input = document.getElementById("userInput");
 
 
-/* ===============================
-   Mensajes
-================================ */
-
-function addMessage(text, type){
-
-  if(!text || text.trim() === ""){
-    text = "…";
-  }
-
-  const div = document.createElement("div");
-  div.className = `msg ${type}`;
-
-  div.innerHTML = text.replace(/\n/g, "<br>");
-
-  chat.appendChild(div);
-  scrollBottom();
-}
-
-
-/* ===============================
-   Typing
-================================ */
-
-function showTyping(){
-
-  typingDiv = document.createElement("div");
-  typingDiv.className = "msg bot typing";
-
-  typingDiv.innerHTML = `
-    <span>.</span>
-    <span>.</span>
-    <span>.</span>
-  `;
-
-  chat.appendChild(typingDiv);
-  scrollBottom();
-
-  startSpeaking();
-}
-
-
-function hideTyping(){
-
-  if(typingDiv){
-    typingDiv.remove();
-    typingDiv = null;
-  }
-
-  stopSpeaking();
-}
-
-
-/* ===============================
-   Scroll
-================================ */
-
-function scrollBottom(){
-  chat.scrollTop = chat.scrollHeight;
-}
-
-
-/* ===============================
-   Envío
-================================ */
-
-form.addEventListener("submit", async (e)=>{
-
-  e.preventDefault();
+/* Simula envío al backend */
+async function sendMessage() {
 
   const text = input.value.trim();
+  if (!text) return;
 
-  if(!text) return;
-
-  addMessage(text, "user");
-
+  addUserMessage(text);
   input.value = "";
 
-  showTyping();
+  // Simular thinking
+  await sleep(500);
 
-  try{
+  startSpeaking();
 
-    const res = await fetch("/chat",{
-      method: "POST",
-      headers:{
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        message: text
-      })
-    });
+  // Simular respuesta
+  await sleep(2500);
 
-    const data = await res.json();
+  const reply = "Esta es una respuesta de prueba del clon.";
 
-    hideTyping();
+  stopSpeaking();
+  addBotMessage(reply);
+}
 
-    addMessage(data.content || "Sin respuesta", "bot");
 
-  }
-  catch(err){
+/* Messages */
 
-    console.error("Error:", err);
+function addUserMessage(text) {
+  const div = document.createElement("div");
+  div.className = "msg-user";
+  div.textContent = text;
+  messages.appendChild(div);
+  scrollDown();
+}
 
-    hideTyping();
+function addBotMessage(text) {
+  const div = document.createElement("div");
+  div.className = "msg-bot";
+  div.textContent = text;
+  messages.appendChild(div);
+  scrollDown();
+}
 
-    addMessage("Error de conexión con el servidor", "bot");
-  }
+function scrollDown() {
+  messages.scrollTop = messages.scrollHeight;
+}
 
-});
+
+/* Speaking Effects */
+
+function startSpeaking() {
+  avatar.classList.add("speaking");
+  avatarBox.classList.add("speaking");
+}
+
+function stopSpeaking() {
+  avatar.classList.remove("speaking");
+  avatarBox.classList.remove("speaking");
+}
+
+
+/* Utils */
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
