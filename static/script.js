@@ -8,33 +8,37 @@ let typingDiv = null;
 
 
 /* ===============================
-   AVATAR
+   Speaking
 ================================ */
 
-function startSpeaking() {
-  avatarBox.classList.add("speaking");
+function startSpeaking(){
+  if(avatarBox){
+    avatarBox.classList.add("speaking");
+  }
 }
 
-function stopSpeaking() {
-  avatarBox.classList.remove("speaking");
+function stopSpeaking(){
+  if(avatarBox){
+    avatarBox.classList.remove("speaking");
+  }
 }
 
 
 /* ===============================
-   MENSAJES
+   Mensajes
 ================================ */
 
-function addMessage(text, type) {
+function addMessage(text, type){
 
-  if (!text || text.trim() === "") {
-    text = "…";
+  if(!text || text.trim()===""){
+    text="…";
   }
 
-  const div = document.createElement("div");
+  const div=document.createElement("div");
 
-  div.className = `msg ${type}`;
+  div.className=`msg ${type}`;
 
-  div.innerHTML = text.replace(/\n/g, "<br>");
+  div.innerHTML=text.replace(/\n/g,"<br>");
 
   chat.appendChild(div);
 
@@ -43,16 +47,16 @@ function addMessage(text, type) {
 
 
 /* ===============================
-   TYPING
+   Typing
 ================================ */
 
-function showTyping() {
+function showTyping(){
 
-  typingDiv = document.createElement("div");
+  typingDiv=document.createElement("div");
 
-  typingDiv.className = "msg bot typing";
+  typingDiv.className="msg bot typing";
 
-  typingDiv.innerHTML = `
+  typingDiv.innerHTML=`
     <span>.</span>
     <span>.</span>
     <span>.</span>
@@ -65,11 +69,12 @@ function showTyping() {
   startSpeaking();
 }
 
-function hideTyping() {
 
-  if (typingDiv) {
+function hideTyping(){
+
+  if(typingDiv){
     typingDiv.remove();
-    typingDiv = null;
+    typingDiv=null;
   }
 
   stopSpeaking();
@@ -77,66 +82,64 @@ function hideTyping() {
 
 
 /* ===============================
-   SCROLL
+   Scroll
 ================================ */
 
-function scrollBottom() {
-  chat.scrollTop = chat.scrollHeight;
+function scrollBottom(){
+  chat.scrollTop=chat.scrollHeight;
 }
 
 
 /* ===============================
-   FORM
+   Envío
 ================================ */
 
-form.addEventListener("submit", async (e) => {
+form.addEventListener("submit",async(e)=>{
 
   e.preventDefault();
 
-  const text = input.value.trim();
+  const text=input.value.trim();
 
-  if (!text) return;
+  if(!text) return;
 
 
-  /* USER */
-  addMessage(text, "user");
+  // User
+  addMessage(text,"user");
 
-  input.value = "";
+  input.value="";
 
   showTyping();
 
 
-  try {
+  try{
 
-    const res = await fetch("/chat", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
+    const res=await fetch("/chat",{
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json"
       },
-      body: JSON.stringify({
-        message: text
+      body:JSON.stringify({
+        message:text
       })
     });
 
-
-    const data = await res.json();
+    const data=await res.json();
 
 
     hideTyping();
 
 
-    /* BOT */
-    addMessage(data.content || "Sin respuesta", "bot");
+    // Bot
+    addMessage(data.content||"Sin respuesta","bot");
 
   }
-
-  catch (err) {
+  catch(err){
 
     console.error(err);
 
     hideTyping();
 
-    addMessage("Error de conexión", "bot");
+    addMessage("Error de conexión","bot");
   }
 
 });
