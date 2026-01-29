@@ -1,6 +1,7 @@
 import os
 import json
 import re
+import traceback
 
 from flask import Flask, request, jsonify, render_template, session
 from datetime import timedelta
@@ -145,11 +146,58 @@ SYSTEM_PROMPT = load_txt(
 def normalize(text):
 
     text = text.lower()
-
     text = re.sub(r"[^\w\sáéíóúñ]", "", text)
 
     return text
 
+
+# =====================================================
+# CONTEXT BUILDER (MEJORADO)
+# =====================================================
+
+def build_context(message, use_fallback=False):
+
+    blocks = []
+
+    if not use_fallback:
+
+        best = find_best_domain(message)
+
+        if best:
+            blocks.append(best)
+
+    # Siempre agregar dominios principales
+    for d in DOMAINS:
+
+        if d not in blocks:
+            blocks.append(d)
+
+    final_blocks = []
+
+    for d in blocks:
+
+        final_blocks.append(
+            f"""
+══════════════════════════════════════
+DOMINIO: {d['name']}
+══════════════════════════════════════
+
+{d['content']}
+"""
+        )
+
+    return (
+        f"{SYSTEM_PROMPT}\n\n"
+        "══════════════════════════════════════\n"
+        "CONOCIMIENTO PERSONAL AUTORIZADO\n"
+        "══════════════════════════════════════\n\n"
+        + "\n".join(final_blocks[:4])  # límite
+    )
+
+
+# =====================================================
+# DOMAIN MATCHING
+# =====================================================
 
 def score_domain(text, domain_content):
 
@@ -161,10 +209,6 @@ def score_domain(text, domain_content):
 
     return len(t & d)
 
-
-# =====================================================
-# DOMAIN MATCHING
-# =====================================================
 
 def find_best_domain(message):
 
@@ -178,55 +222,10 @@ def find_best_domain(message):
 
     scores.sort(reverse=True, key=lambda x: x[0])
 
-    if scores and scores[0][0] > 0:
+    if scores and scores[0][0] > 1:
         return scores[0][1]
 
     return None
-
-
-# =====================================================
-# CONTEXT BUILDER
-# =====================================================
-
-def build_context(message, use_fallback=False):
-
-    blocks = []
-
-    best = find_best_domain(message)
-
-    if best and not use_fallback:
-
-        blocks.append(
-            f"""
-══════════════════════════════════════
-DOMINIO PRINCIPAL: {best['name']}
-══════════════════════════════════════
-
-{best['content']}
-"""
-        )
-
-    else:
-
-        for d in DOMAINS:
-
-            blocks.append(
-                f"""
-══════════════════════════════════════
-DOMINIO: {d['name']}
-══════════════════════════════════════
-
-{d['content']}
-"""
-            )
-
-    return (
-        f"{SYSTEM_PROMPT}\n\n"
-        "══════════════════════════════════════\n"
-        "CONOCIMIENTO PERSONAL AUTORIZADO\n"
-        "══════════════════════════════════════\n\n"
-        + "\n".join(blocks)
-    )
 
 
 # =====================================================
@@ -266,7 +265,7 @@ def list_manual_titles():
 
 
 # =====================================================
-# INTENT DETECTION
+# INTENT
 # =====================================================
 
 def is_list_request(text):
@@ -274,11 +273,10 @@ def is_list_request(text):
     keywords = [
         "lista",
         "todos",
-        "todo",
         "mostrame",
-        "que tenes",
-        "qué tenes",
-        "manuales"
+        "manuales",
+        "qué manuales",
+        "que manuales"
     ]
 
     t = normalize(text)
@@ -294,7 +292,7 @@ def is_ambiguous_list(text):
 
 
 # =====================================================
-# MODEL
+# MODEL (ROBUSTO)
 # =====================================================
 
 def query_model(history, message):
@@ -304,65 +302,40 @@ def query_model(history, message):
     if not token:
         return "No tengo acceso al modelo."
 
-    client = ChatCompletionsClient(
-        endpoint="https://models.inference.ai.azure.com",
-        credential=AzureKeyCredential(token),
-    )
+    try:
 
-    messages = [
-        SystemMessage(content=build_context(message))
-    ]
-
-    limit = CONFIG["history_limit"]
-
-    for msg in history[-limit:]:
-
-        if msg["role"] == "user":
-
-            messages.append(
-                UserMessage(content=msg["content"])
-            )
-
-        elif msg["role"] == "assistant":
-
-            messages.append(
-                AssistantMessage(content=msg["content"])
-            )
-
-
-    messages.append(
-        UserMessage(content=message)
-    )
-
-
-    response = client.complete(
-        model="Meta-Llama-3.1-8B-Instruct",
-        messages=messages,
-        temperature=0.05,
-        max_tokens=400,
-        top_p=0.05
-    )
-
-
-    answer = response.choices[0].message.content.strip()
-
-
-    # ================================
-    # FALLBACK AUTOMATICO
-    # ================================
-
-    fail_phrases = [
-        "no tengo información",
-        "no lo sé",
-        "no tengo datos",
-        "no está definido"
-    ]
-
-    if any(p in answer.lower() for p in fail_phrases):
-
-        messages[0] = SystemMessage(
-            content=build_context(message, use_fallback=True)
+        client = ChatCompletionsClient(
+            endpoint="https://models.inference.ai.azure.com",
+            credential=AzureKeyCredential(token),
         )
+
+
+        messages = [
+            SystemMessage(content=build_context(message))
+        ]
+
+
+        limit = CONFIG["history_limit"]
+
+        for msg in history[-limit:]:
+
+            if msg["role"] == "user":
+
+                messages.append(
+                    UserMessage(content=msg["content"])
+                )
+
+            elif msg["role"] == "assistant":
+
+                messages.append(
+                    AssistantMessage(content=msg["content"])
+                )
+
+
+        messages.append(
+            UserMessage(content=message)
+        )
+
 
         response = client.complete(
             model="Meta-Llama-3.1-8B-Instruct",
@@ -372,9 +345,43 @@ def query_model(history, message):
             top_p=0.05
         )
 
+
         answer = response.choices[0].message.content.strip()
 
-    return answer
+
+        # Fallback semántico
+        fail_phrases = [
+            "no tengo información",
+            "no lo sé",
+            "no tengo datos"
+        ]
+
+        if any(p in answer.lower() for p in fail_phrases):
+
+            messages[0] = SystemMessage(
+                content=build_context(message, use_fallback=True)
+            )
+
+            response = client.complete(
+                model="Meta-Llama-3.1-8B-Instruct",
+                messages=messages,
+                temperature=0.05,
+                max_tokens=400,
+                top_p=0.05
+            )
+
+            answer = response.choices[0].message.content.strip()
+
+
+        return answer
+
+
+    except Exception as e:
+
+        print("MODEL ERROR:", e)
+        traceback.print_exc()
+
+        return "No puedo responder en este momento."
 
 
 # =====================================================
@@ -393,101 +400,102 @@ def index():
 @app.route("/chat", methods=["POST"])
 def chat():
 
-    data = request.get_json(silent=True) or {}
+    try:
 
-    message = data.get("message", "").strip()
+        data = request.get_json(silent=True) or {}
 
-    if not message:
+        message = data.get("message", "").strip()
 
-        return jsonify({
-            "type": "text",
-            "content": "Decime."
-        })
-
-
-    history = session.get("history", [])
-
-
-    # ======================================
-    # AMBIGUOUS LIST
-    # ======================================
-
-    if is_ambiguous_list(message):
-
-        return jsonify({
-            "type": "text",
-            "content": "¿Lista de qué exactamente?"
-        })
-
-
-    # ======================================
-    # LIST MANUALES
-    # ======================================
-
-    if is_list_request(message) and "manual" in normalize(message):
-
-        titles = list_manual_titles()
-
-        if not titles:
+        if not message:
 
             return jsonify({
                 "type": "text",
-                "content": "No tengo manuales."
+                "content": "Decime."
             })
 
-        txt = "Tengo estos manuales:\n\n"
 
-        for t in titles:
-            txt += f"• {t}\n"
-
-        return jsonify({
-            "type": "text",
-            "content": txt.strip()
-        })
+        history = session.get("history", [])
 
 
-    # ======================================
-    # MANUAL INDIVIDUAL
-    # ======================================
+        # Lista ambigua
+        if is_ambiguous_list(message):
 
-    manual = find_manual(message)
+            return jsonify({
+                "type": "text",
+                "content": "¿Lista de qué exactamente?"
+            })
 
-    if manual:
 
-        card = render_vcard(manual)
+        # Lista manuales
+        if is_list_request(message):
+
+            titles = list_manual_titles()
+
+            if not titles:
+
+                return jsonify({
+                    "type": "text",
+                    "content": "No tengo manuales."
+                })
+
+            txt = "Tengo estos manuales:\n\n"
+
+            for t in titles:
+                txt += f"• {t}\n"
+
+            return jsonify({
+                "type": "text",
+                "content": txt.strip()
+            })
+
+
+        # Manual individual
+        manual = find_manual(message)
+
+        if manual:
+
+            card = render_vcard(manual)
+
+            history.extend([
+                {"role": "user", "content": message},
+                {"role": "assistant", "content": card}
+            ])
+
+            session["history"] = history[-12:]
+
+            return jsonify({
+                "type": "card",
+                "content": card
+            })
+
+
+        # Modelo
+        answer = query_model(history, message)
+
 
         history.extend([
             {"role": "user", "content": message},
-            {"role": "assistant", "content": card}
+            {"role": "assistant", "content": answer}
         ])
 
         session["history"] = history[-12:]
 
+
         return jsonify({
-            "type": "card",
-            "content": card
+            "type": "text",
+            "content": answer
         })
 
 
-    # ======================================
-    # CHAT MODEL
-    # ======================================
+    except Exception as e:
 
-    answer = query_model(history, message)
+        print("CHAT ERROR:", e)
+        traceback.print_exc()
 
-
-    history.extend([
-        {"role": "user", "content": message},
-        {"role": "assistant", "content": answer}
-    ])
-
-    session["history"] = history[-12:]
-
-
-    return jsonify({
-        "type": "text",
-        "content": answer
-    })
+        return jsonify({
+            "type": "text",
+            "content": "Ocurrió un error interno."
+        })
 
 
 # =====================================================
