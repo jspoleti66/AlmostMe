@@ -1,72 +1,68 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
-  <title>AlmostMe – Clon Interactivo</title>
+  <title>AlmostMe · Asistente Digital</title>
 
-  <link rel="stylesheet" href="/static/style.css">
-  <link rel="icon" href="/static/favicon.ico">
+  <link rel="stylesheet" href="/static/style.css"/>
+  <link rel="icon" href="/static/favicon.ico"/>
 </head>
 
 <body>
 
-  <div class="app">
+<div class="app">
 
-    <!-- HEADER -->
-    <header class="chat-header">
+  <!-- HEADER -->
+  <header class="header">
 
-      <div id="avatar" class="logo-container">
+    <div class="header-left">
 
-        <!-- Logo fondo -->
-        <img src="/static/logo.png" class="logo-bg">
-
-        <!-- Video dentro -->
+      <div class="mini-avatar" id="avatar">
         <video
-          class="avatar-video"
           src="/static/avatar.mp4"
           autoplay
           muted
           loop
           playsinline
         ></video>
-
-        <!-- Glow -->
-        <div class="logo-glow"></div>
-
       </div>
 
-      <div class="status">
-        ● Online
+      <div class="brand">
+        <div class="brand-name">AlmostMe</div>
+        <div class="brand-status">
+          <span class="dot"></span> Online
+        </div>
       </div>
 
-    </header>
+    </div>
+
+  </header>
 
 
-    <!-- CHAT -->
-    <main id="chat" class="chat"></main>
+  <!-- CHAT -->
+  <main id="chat" class="chat"></main>
 
 
-    <!-- INPUT -->
-    <form id="form" class="input-area">
+  <!-- INPUT -->
+  <form id="form" class="input-area">
 
-      <input
-        id="input"
-        type="text"
-        placeholder="Escribí tu mensaje..."
-        autocomplete="off"
-        required
-      >
+    <input
+      id="input"
+      type="text"
+      placeholder="Escribí tu mensaje..."
+      autocomplete="off"
+      required
+    />
 
-      <button type="submit">➤</button>
+    <button type="submit">➤</button>
 
-    </form>
+  </form>
 
-  </div>
+</div>
 
-  <script src="/static/script.js"></script>
+<script src="/static/script.js"></script>
 
 </body>
 </html>
