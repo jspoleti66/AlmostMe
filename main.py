@@ -88,15 +88,16 @@ def build_context(message):
         if d not in blocks: blocks.append(d)
     
     context_text = ""
-    for d in blocks[:3]: # Limitar dominios para ahorrar tokens
+    for d in blocks[:3]:
         context_text += f"\nDOMINIO {d['name']}:\n{d['content']}\n"
 
     return f"{SYSTEM_PROMPT}\n\nCONOCIMIENTO AUTORIZADO:\n{context_text}"
 
 def find_best_domain(message):
     scores = []
+    norm_msg = normalize(message)
     for d in DOMAINS:
-        t = set(normalize(message).split())
+        t = set(norm_msg.split())
         dc = set(normalize(d["content"]).split())
         score = len(t & dc)
         scores.append((score, d))
@@ -115,9 +116,9 @@ def list_manual_titles():
     return [m["title"] for m in MANUALES if "title" in m]
 
 def mentions_manual_intent(text):
-    triggers = ["manual", "guia", "instructivo", "documentacion", "como uso", "donde veo"]
     t = normalize(text)
-    return any(k in t for k in triggers)
+    # Detecta "manual", "manuel", "guia", "lista", etc.
+    return bool(re.search(r"(manu|guia|lista|instruc|docu)", t))
 
 # =====================================================
 # MODEL
@@ -168,28 +169,37 @@ def chat():
         # 1. Filtro de Seguridad / Meta-info
         meta_triggers = ["que informacion guard", "que sabes de mi", "tus archivos"]
         if any(t in norm for t in meta_triggers):
-            return jsonify({"type": "text", "content": "Solo accedo a manuales autorizados."})
+            return jsonify({"type": "text", "content": "Solo accedo a manuales y conocimiento técnico autorizado."})
 
-        # 2. Lógica de Manuales (Evita que el LLM invente listas)
-        if mentions_manual_intent(message) or norm == "si":
+        # 2. Lógica de Manuales (Intercepta "manuales", "manueles", "listado", etc.)
+        # Si menciona la intención O el usuario responde "si" a una oferta previa
+        if mentions_manual_intent(message) or norm in ["si", "cuales", "que mas"]:
             manual = find_manual(message)
             if manual:
-                return jsonify({"type": "vcard", "content": f"<b>{manual['title']}</b><br>{manual['summary']}<br><a href='{manual['url']}' target='_blank'>Ver Manual</a>"})
+                return jsonify({
+                    "type": "vcard", 
+                    "content": f"<b>{manual['title']}</b><br>{manual['summary']}<br><a href='{manual['url']}' target='_blank'>Ver Manual</a>"
+                })
             
+            # Si no pidió uno específico, mostramos la lista REAL del JSON
             titulos = list_manual_titles()
             if titulos:
-                return jsonify({"type": "text", "content": "Tengo estos manuales disponibles:\n• " + "\n• ".join(titulos)})
+                return jsonify({
+                    "type": "text", 
+                    "content": "Los únicos manuales que tengo disponibles son:\n• " + "\n• ".join(titulos)
+                })
 
-        # 3. Consulta al LLM
+        # 3. Consulta al LLM (Para preguntas sobre mantenimiento, etc.)
         answer = query_model(history, message)
         
         history.append({"role": "user", "content": message})
         history.append({"role": "assistant", "content": answer})
-        session["history"] = history[-10:] # Mantener historial corto
+        session["history"] = history[-10:] # Mantener historial corto para evitar errores de sesión
 
         return jsonify({"type": "text", "content": answer})
 
     except Exception:
+        print(traceback.format_exc())
         return jsonify({"type": "text", "content": "Error de conexión."}), 500
 
 if __name__ == "__main__":
