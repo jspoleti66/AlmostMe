@@ -1,34 +1,69 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
-  <title>AlmostMe</title>
-  <link rel="stylesheet" href="style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>AlmostMe – Clon Interactivo</title>
+
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="icon" href="/static/favicon.ico">
 </head>
+
 <body>
 
-<div class="app">
+  <div class="app">
 
-  <!-- Avatar -->
-  <div class="avatar-container" id="avatarBox">
-    <img src="avatar.jpg" id="avatar" class="avatar">
+    <!-- HEADER -->
+    <header class="top-bar">
+
+      <div class="brand">
+
+        <!-- AVATAR -->
+        <div class="avatar-container" id="avatarBox">
+          <img
+            src="/static/avatar.jpg"
+            alt="AlmostMe"
+            class="avatar"
+            id="avatar"
+          >
+        </div>
+
+        <div class="brand-info">
+          <img src="/static/logo.png" class="logo">
+          <span class="status">● Online</span>
+        </div>
+
+      </div>
+
+    </header>
+
+
+    <!-- CHAT -->
+    <main id="chat" class="chat"></main>
+
+
+    <!-- INPUT -->
+    <form id="form" class="input-area">
+
+      <input
+        id="input"
+        type="text"
+        placeholder="Escribí tu mensaje..."
+        autocomplete="off"
+        required
+      >
+
+      <button type="submit">
+        ➤
+      </button>
+
+    </form>
+
   </div>
 
-  <!-- Chat -->
-  <div class="chat">
+  <script src="/static/script.js"></script>
 
-    <div id="messages"></div>
-
-    <div class="input-box">
-      <input type="text" id="userInput" placeholder="Escribí tu consulta...">
-      <button onclick="sendMessage()">Enviar</button>
-    </div>
-
-  </div>
-
-</div>
-
-<script src="script.js"></script>
 </body>
 </html>
-
