@@ -14,18 +14,6 @@
 
   <div class="app">
 
-    <!-- AVATAR VIDEO FLOTANTE -->
-    <div id="floatingAvatar" class="floating-avatar">
-      <video
-        class="avatar-video"
-        src="/static/avatar.mp4"
-        autoplay
-        muted
-        loop
-        playsinline>
-      </video>
-    </div>
-
     <!-- HEADER -->
     <header class="header">
       <div class="header-info">
@@ -35,7 +23,21 @@
     </header>
 
     <!-- CHAT -->
-    <main id="chat" class="chat"></main>
+    <main id="chat" class="chat">
+
+      <!-- AVATAR DENTRO DEL CHAT -->
+      <div id="chatAvatar" class="chat-avatar">
+        <video
+          class="avatar-video"
+          src="/static/avatar.mp4"
+          autoplay
+          muted
+          loop
+          playsinline>
+        </video>
+      </div>
+
+    </main>
 
     <!-- INPUT -->
     <form id="form" class="input-area">
