@@ -78,36 +78,31 @@ MANUALES = load_manuals()
 SYSTEM_PROMPT = load_txt(CONFIG["system_prompt"])
 
 # =====================================================
-# UTILS & LOGIC
+# UTILS
 # =====================================================
 def normalize(text):
     text = text.lower()
     text = re.sub(r"[^\w\sáéíóúñ]", "", text)
     return text
 
-def build_context(message):
-    best = find_best_domain(message)
-    blocks = [best] if best else []
-    for d in DOMAINS:
-        if d not in blocks:
-            blocks.append(d)
+def has_ambiguous_manual_word(text):
+    """
+    Detecta palabras tipo:
+    manuel / manueles / manules / manuall / etc.
+    EXCLUYE manual y manuales
+    """
+    tokens = normalize(text).split()
+    for t in tokens:
+        if t.startswith("manu") and t not in ("manual", "manuales"):
+            return True
+    return False
 
-    context_text = ""
-    for d in blocks[:3]:
-        context_text += f"\nDOMINIO {d['name']}:\n{d['content']}\n"
-
-    return f"{SYSTEM_PROMPT}\n\nCONOCIMIENTO AUTORIZADO:\n{context_text}"
-
-def find_best_domain(message):
-    scores = []
-    norm_msg = normalize(message)
-    for d in DOMAINS:
-        t = set(norm_msg.split())
-        dc = set(normalize(d["content"]).split())
-        score = len(t & dc)
-        scores.append((score, d))
-    scores.sort(reverse=True, key=lambda x: x[0])
-    return scores[0][1] if scores and scores[0][0] > 1 else None
+def mentions_manual_intent(text):
+    t = normalize(text)
+    return bool(re.search(
+        r"\b(manual|manuales|guia|guias|instrucciones|documentacion|lista de manuales)\b",
+        t
+    ))
 
 def find_manual(message):
     text = normalize(message)
@@ -116,20 +111,18 @@ def find_manual(message):
         for key in ids:
             if not key:
                 continue
-            pattern = rf"\b{re.escape(key)}\b"
-            if re.search(pattern, text):
+            if re.search(rf"\b{re.escape(key)}\b", text):
                 return manual
     return None
 
 def list_manual_titles():
     return [m["title"] for m in MANUALES if "title" in m]
 
-def mentions_manual_intent(text):
-    t = normalize(text)
-    return bool(re.search(
-        r"\b(manual|manuales|guia|guias|instrucciones|documentacion|lista de manuales)\b",
-        t
-    ))
+def build_context(message):
+    context_text = ""
+    for d in DOMAINS[:3]:
+        context_text += f"\nDOMINIO {d['name']}:\n{d['content']}\n"
+    return f"{SYSTEM_PROMPT}\n\nCONOCIMIENTO AUTORIZADO:\n{context_text}"
 
 # =====================================================
 # MODEL
@@ -145,11 +138,9 @@ def query_model(history, message):
         )
 
         messages = [SystemMessage(content=build_context(message))]
-
         for msg in history:
             role = UserMessage if msg["role"] == "user" else AssistantMessage
             messages.append(role(content=msg["content"]))
-
         messages.append(UserMessage(content=message))
 
         response = client.complete(
@@ -182,47 +173,43 @@ def chat():
         history = session.get("history", [])
         norm = normalize(message)
 
-        # 1. Filtro Meta-información
-        meta_triggers = [
-            "que informacion guard",
-            "que sabes de mi",
-            "tus archivos"
-        ]
-        if any(t in norm for t in meta_triggers):
+        # 1. Meta-info
+        if any(t in norm for t in ["que informacion guard", "que sabes de mi", "tus archivos"]):
             return jsonify({
                 "type": "text",
                 "content": "Solo accedo a manuales y conocimiento técnico autorizado."
             })
 
-        # 2. MANUALES (SOLO CON INTENCIÓN EXPLÍCITA)
+        # 2. AMBIGÜEDAD → NO inferir, NO LLM
+        if has_ambiguous_manual_word(message) and not mentions_manual_intent(message):
+            return jsonify({
+                "type": "text",
+                "content": "No entiendo con claridad tu consulta. ¿Podés reformularla?"
+            })
 
-        # 2.1 Manual específico por ID exacto
-        manual_especifico = find_manual(message)
-        if manual_especifico:
+        # 3. Manual específico
+        manual = find_manual(message)
+        if manual:
             return jsonify({
                 "type": "vcard",
                 "content": (
-                    f"<b>{manual_especifico['title']}</b><br>"
-                    f"{manual_especifico['summary']}<br>"
-                    f"<a href='{manual_especifico['url']}' target='_blank'>Ver Manual</a>"
+                    f"<b>{manual['title']}</b><br>"
+                    f"{manual['summary']}<br>"
+                    f"<a href='{manual['url']}' target='_blank'>Ver Manual</a>"
                 )
             })
 
-        # 2.2 Lista de manuales SOLO si se pidió explícitamente
+        # 4. Lista de manuales (solo intención clara)
         if mentions_manual_intent(message):
-            titulos = list_manual_titles()
-            if titulos:
+            titles = list_manual_titles()
+            if titles:
                 return jsonify({
                     "type": "text",
-                    "content": (
-                        "Los únicos manuales que tengo disponibles son:\n• "
-                        + "\n• ".join(titulos)
-                    )
+                    "content": "Los únicos manuales que tengo disponibles son:\n• " + "\n• ".join(titles)
                 })
 
-        # 3. LLM (charla general, personas, hipótesis, etc.)
+        # 5. LLM
         answer = query_model(history, message)
-
         history.append({"role": "user", "content": message})
         history.append({"role": "assistant", "content": answer})
         session["history"] = history[-10:]
@@ -231,10 +218,7 @@ def chat():
 
     except Exception:
         print(traceback.format_exc())
-        return jsonify(
-            {"type": "text", "content": "Hubo un error de conexión."},
-            500
-        )
+        return jsonify({"type": "text", "content": "Hubo un error de conexión."}), 500
 
 if __name__ == "__main__":
     app.run(debug=True)
