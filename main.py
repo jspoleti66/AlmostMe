@@ -121,8 +121,8 @@ def list_manual_titles():
 
 def mentions_manual_intent(text):
     t = normalize(text)
-    # Fix: Captura manual, manuel, guia, lista, listado
-    return bool(re.search(r"(manu|guia|lista|instruc|docu)", t))
+    # Fix: Captura manual, guia, lista, listado
+    return bool(re.search(r"(manual|guia|lista|instruc|docu)", t))
 
 # =====================================================
 # MODEL
@@ -208,3 +208,4 @@ def chat():
 
 if __name__ == "__main__":
     app.run(debug=True)
+
