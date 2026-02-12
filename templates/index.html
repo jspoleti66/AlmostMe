@@ -1,14 +1,15 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AlmostMe – Clon Interactivo</title>
 
-  <link rel="stylesheet" href="/static/style.css">
-  <link rel="icon" href="/static/favicon.ico">
+  <meta name="theme-color" content="#020617" />
+  <meta name="description" content="AlmostMe · Clon interactivo en tiempo real" />
+
+  <link rel="stylesheet" href="/static/style.css" />
+  <link rel="icon" href="/static/favicon.ico" />
 </head>
 
 <body>
@@ -20,50 +21,44 @@
 
       <!-- AVATAR -->
       <div class="avatar-container" id="avatarBox">
-
         <img
           src="/static/avatar.jpg"
-          alt="Avatar"
+          alt="Avatar AlmostMe"
           class="avatar"
-        >
-
+          draggable="false"
+        />
       </div>
 
       <!-- INFO -->
       <div class="header-info">
-
-        <div class="header-title">
-          AlmostMe
-        </div>
-
+        <div class="header-title">AlmostMe</div>
         <div class="status">
-          ● Online
+          <span class="dot"></span>
+          Online
         </div>
+      </div>
 
+      <!-- ACTIONS -->
+      <div class="header-actions">
+        <button id="toggleTheme" title="Cambiar tema">🌗</button>
+        <button id="clearChat" title="Limpiar chat">🗑️</button>
       </div>
 
     </header>
 
-
     <!-- CHAT -->
     <main id="chat" class="chat"></main>
 
-
     <!-- INPUT -->
     <form id="form" class="input-area">
-
       <input
         id="input"
         type="text"
-        placeholder="Escribí tu mensaje..."
+        placeholder="Escribí tu mensaje…"
         autocomplete="off"
         required
-      >
-
-      <button type="submit">
-        ➤
-      </button>
-
+      />
+      <button type="submit">➤</button>
     </form>
 
   </div>
