@@ -1,7 +1,7 @@
 const chat = document.getElementById("chat");
 const form = document.getElementById("form");
 const input = document.getElementById("input");
-const avatar = document.getElementById("floatingAvatar");
+const avatar = document.getElementById("chatAvatar");
 
 /* ===== AVATAR STATES ===== */
 
@@ -24,7 +24,7 @@ function clearAvatar(){
 function addMessage(text,type){
   const div=document.createElement("div");
   div.className=`msg ${type}`;
-  div.innerHTML=text.replace(/\n/g,"<br>");
+  div.innerHTML=(text || "…").replace(/\n/g,"<br>");
   chat.appendChild(div);
   chat.scrollTop=chat.scrollHeight;
 }
@@ -52,7 +52,6 @@ form.addEventListener("submit",async(e)=>{
     if(!res.ok) throw new Error("HTTP error");
 
     const data=await res.json();
-
     const reply = data.content || data.response || "Sin respuesta";
 
     setSpeaking();
