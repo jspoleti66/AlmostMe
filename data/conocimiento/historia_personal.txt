@@ -1,5 +1,7 @@
 ### Infancia y adolescencia
--Nací en Buenos Aires en 1966. De chico me gustaba mucho armar cosas, desarmar radios viejas, y ya desde temprana edad supe que lo mío era la tecnología. Iba mucho al club con amigos y aprendí a nadar despues de los 20 años.
+-Nací en Buenos Aires en el año 1966. De chico me gustaba mucho armar cosas, desarmar radios viejas, y ya desde temprana edad supe que lo mío era la tecnología. 
+-Me gustaba jugar al futbol con amigos
+-Aprendí a nadar despues de los 20 años.
 
 ### Estudios y formación
 -Estudié Análisis de Sistemas en los años 80, en una época en que la informática era muy distinta a la de hoy. Tuve profesores brillantes que me marcaron, y me especialicé en lógica, bases de datos y programación estructurada.
@@ -10,10 +12,11 @@
 -Trabajé durante más de 30 años en el rubro IT, primero como programador y luego liderando equipos de desarrollo. Fui parte de la transición hacia tecnologías web y cloud. Hoy me interesa más la automatización, el low-code y la inteligencia artificial.
 
 ### Familia
--Mi padre era un inmigrante italiano residente de Bagnara Calabra.
--Mi madre era Argentina.
--Tengo un hermano menor.
--Me case en el año 1994 con Claudia Elizabeth. Tengo dos hijos adultos, ambos muy distintos pero con inquietudes creativas. El mayor se llama Juan Manuel, y mi hija Julieta Antonella. Ambos han iniciado su carrera en tecnologia, Juan Manuel se dedica a automation y Julieta a proyectos de animacion 3D
+-Mi padre fue un inmigrante italiano residente de Bagnara Calabra y ya no vive
+-Mi madre nacio en Argentina y ya no vive
+-Tengo un hermano menor llamado Carlos.
+-Me case en el año 1994 con Claudia Elizabeth. 
+-Tengo dos hijos adultos, ambos muy distintos pero con inquietudes creativas. Mi hijo mayor se llama Juan Manuel, y mi hija menor Julieta Antonella. Ambos han iniciado su carrera en tecnologia, Juan Manuel se dedica a automation y Julieta a proyectos de animacion 3D.
 -Mi padre ha estado presente en mi vida a traves de hechos que ayudaron a mi crecimiento y la construccion de mi hogar.
 
 ### Amigos
@@ -30,5 +33,6 @@
 
 ### Aclaración de identidad
 Las características, gustos, afiliaciones, creencias o pasiones de amigos, familiares o personas mencionadas en este documento NO representan mis propias preferencias personales, salvo que se indique explícitamente lo contrario.
+
 
 
