@@ -6,10 +6,20 @@ const avatarBox = document.getElementById("avatarBox");
 let typingDiv = null;
 
 /* ===============================
-   Avatar speaking
+   Avatar states
 ================================ */
 
+function startThinking(){
+  avatarBox.classList.remove("speaking");
+  avatarBox.classList.add("thinking");
+}
+
+function stopThinking(){
+  avatarBox.classList.remove("thinking");
+}
+
 function startSpeaking(){
+  avatarBox.classList.remove("thinking");
   avatarBox.classList.add("speaking");
 }
 
@@ -26,9 +36,9 @@ function addMessage(text, type){
     text="…";
   }
 
-  const div=document.createElement("div");
-  div.className=`msg ${type}`;
-  div.innerHTML=text.replace(/\n/g,"<br>");
+  const div = document.createElement("div");
+  div.className = `msg ${type}`;
+  div.innerHTML = text.replace(/\n/g,"<br>");
   chat.appendChild(div);
   scrollBottom();
 }
@@ -38,20 +48,18 @@ function addMessage(text, type){
 ================================ */
 
 function showTyping(){
-  typingDiv=document.createElement("div");
-  typingDiv.className="msg bot typing";
-  typingDiv.innerHTML="<span>.</span><span>.</span><span>.</span>";
+  typingDiv = document.createElement("div");
+  typingDiv.className = "msg bot typing";
+  typingDiv.innerHTML = "<span>.</span><span>.</span><span>.</span>";
   chat.appendChild(typingDiv);
   scrollBottom();
-  startSpeaking();
 }
 
 function hideTyping(){
   if(typingDiv){
     typingDiv.remove();
-    typingDiv=null;
+    typingDiv = null;
   }
-  stopSpeaking();
 }
 
 /* ===============================
@@ -59,50 +67,60 @@ function hideTyping(){
 ================================ */
 
 function scrollBottom(){
-  chat.scrollTop=chat.scrollHeight;
+  chat.scrollTop = chat.scrollHeight;
 }
 
 /* ===============================
    Submit
 ================================ */
 
-form.addEventListener("submit",async(e)=>{
+form.addEventListener("submit", async (e)=>{
   e.preventDefault();
 
-  const text=input.value.trim();
+  const text = input.value.trim();
   if(!text) return;
 
+  // User message
   addMessage(text,"user");
   input.value="";
   input.disabled=true;
 
+  // Thinking
+  startThinking();
   showTyping();
 
   try{
-    const res=await fetch("/chat",{
+    const res = await fetch("/chat",{
       method:"POST",
       headers:{ "Content-Type":"application/json" },
       body:JSON.stringify({ message:text })
     });
 
-    const data=await res.json();
+    const data = await res.json();
 
     hideTyping();
+
+    // Speaking
+    stopThinking();
+    startSpeaking();
+
     addMessage(data.content || "Sin respuesta","bot");
   }
   catch(err){
     console.error(err);
     hideTyping();
+    stopThinking();
     addMessage("Error de conexión","bot");
   }
   finally{
+    setTimeout(stopSpeaking, 600);
     input.disabled=false;
     input.focus();
   }
 });
 
-/* ===== Optional actions ===== */
+/* ===== Clear chat ===== */
 
-document.getElementById("clearChat").onclick=()=>{
-  chat.innerHTML="";
+document.getElementById("clearChat").onclick = () => {
+  chat.innerHTML = "";
 };
