@@ -3,9 +3,15 @@ const form = document.getElementById("form");
 const input = document.getElementById("input");
 const avatarBox = document.getElementById("avatarBox");
 
-let typingDiv = null;
+function addMessage(text, sender){
+  const msg = document.createElement("div");
+  msg.className = `message ${sender}`;
+  msg.textContent = text;
+  chat.appendChild(msg);
+  chat.scrollTop = chat.scrollHeight;
+}
 
-/* ===== Avatar states ===== */
+/* ===== AVATAR STATES ===== */
 
 function startThinking(){
   avatarBox.classList.remove("speaking");
@@ -25,77 +31,40 @@ function stopSpeaking(){
   avatarBox.classList.remove("speaking");
 }
 
-/* ===== Messages ===== */
+/* ===== FORM ===== */
 
-function addMessage(text, type){
-  if(!text || text.trim()==="") text="…";
-  const div=document.createElement("div");
-  div.className=`msg ${type}`;
-  div.innerHTML=text.replace(/\n/g,"<br>");
-  chat.appendChild(div);
-  chat.scrollTop=chat.scrollHeight;
-}
-
-/* ===== Typing ===== */
-
-function showTyping(){
-  typingDiv=document.createElement("div");
-  typingDiv.className="msg bot typing";
-  typingDiv.innerHTML="<span>.</span><span>.</span><span>.</span>";
-  chat.appendChild(typingDiv);
-  startThinking();
-}
-
-function hideTyping(){
-  if(typingDiv){
-    typingDiv.remove();
-    typingDiv=null;
-  }
-}
-
-/* ===== Submit ===== */
-
-form.addEventListener("submit",async(e)=>{
+form.addEventListener("submit", async (e)=>{
   e.preventDefault();
 
-  const text=input.value.trim();
+  const text = input.value.trim();
   if(!text) return;
 
   addMessage(text,"user");
   input.value="";
-  input.disabled=true;
 
-  showTyping();
+  startThinking();
 
   try{
-    const res=await fetch("/chat",{
+    const res = await fetch("/chat",{
       method:"POST",
       headers:{ "Content-Type":"application/json" },
       body:JSON.stringify({ message:text })
     });
 
-    const data=await res.json();
+    const data = await res.json();
 
-    hideTyping();
     stopThinking();
     startSpeaking();
 
-    addMessage(data.content || "Sin respuesta","bot");
-  }
-  catch{
-    hideTyping();
+    addMessage(data.response,"bot");
+
+    // simulamos tiempo de habla
+    setTimeout(()=>{
+      stopSpeaking();
+    }, Math.min(3000, data.response.length * 30));
+
+  }catch(err){
     stopThinking();
     addMessage("Error de conexión","bot");
   }
-  finally{
-    setTimeout(stopSpeaking,600);
-    input.disabled=false;
-    input.focus();
-  }
 });
-
-/* ===== Clear chat ===== */
-
-document.getElementById("clearChat").onclick=()=>{
-  chat.innerHTML="";
-};
