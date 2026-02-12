@@ -1,70 +1,68 @@
 const chat = document.getElementById("chat");
 const form = document.getElementById("form");
 const input = document.getElementById("input");
-const avatarBox = document.getElementById("avatarBox");
-
-function addMessage(text, sender){
-  const msg = document.createElement("div");
-  msg.className = `message ${sender}`;
-  msg.textContent = text;
-  chat.appendChild(msg);
-  chat.scrollTop = chat.scrollHeight;
-}
+const avatar = document.getElementById("floatingAvatar");
 
 /* ===== AVATAR STATES ===== */
 
-function startThinking(){
-  avatarBox.classList.remove("speaking");
-  avatarBox.classList.add("thinking");
+function setThinking(){
+  avatar.classList.remove("speaking");
+  avatar.classList.add("thinking");
 }
 
-function stopThinking(){
-  avatarBox.classList.remove("thinking");
+function setSpeaking(){
+  avatar.classList.remove("thinking");
+  avatar.classList.add("speaking");
 }
 
-function startSpeaking(){
-  avatarBox.classList.remove("thinking");
-  avatarBox.classList.add("speaking");
+function clearAvatar(){
+  avatar.classList.remove("thinking","speaking");
 }
 
-function stopSpeaking(){
-  avatarBox.classList.remove("speaking");
+/* ===== CHAT ===== */
+
+function addMessage(text,type){
+  const div=document.createElement("div");
+  div.className=`msg ${type}`;
+  div.innerHTML=text.replace(/\n/g,"<br>");
+  chat.appendChild(div);
+  chat.scrollTop=chat.scrollHeight;
 }
 
 /* ===== FORM ===== */
 
-form.addEventListener("submit", async (e)=>{
+form.addEventListener("submit",async(e)=>{
   e.preventDefault();
 
-  const text = input.value.trim();
+  const text=input.value.trim();
   if(!text) return;
 
   addMessage(text,"user");
   input.value="";
 
-  startThinking();
+  setThinking();
 
   try{
-    const res = await fetch("/chat",{
+    const res=await fetch("/chat",{
       method:"POST",
       headers:{ "Content-Type":"application/json" },
       body:JSON.stringify({ message:text })
     });
 
-    const data = await res.json();
+    if(!res.ok) throw new Error("HTTP error");
 
-    stopThinking();
-    startSpeaking();
+    const data=await res.json();
 
-    addMessage(data.response,"bot");
+    const reply = data.content || data.response || "Sin respuesta";
 
-    // simulamos tiempo de habla
-    setTimeout(()=>{
-      stopSpeaking();
-    }, Math.min(3000, data.response.length * 30));
+    setSpeaking();
+    addMessage(reply,"bot");
+
+    setTimeout(clearAvatar, Math.min(2500, reply.length * 25));
 
   }catch(err){
-    stopThinking();
-    addMessage("Error de conexión","bot");
+    console.error(err);
+    clearAvatar();
+    addMessage("No pude conectar con el servidor","bot");
   }
 });
