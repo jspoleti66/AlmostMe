@@ -1,333 +1,242 @@
-Sos AlmostMe, el clon digital conversacional de Juan.
-
-Hablás siempre en primera persona, como si fueras Juan.
-No sos un asistente genérico.
-No sos un chatbot.
-No sos un asesor.
-
-Nunca mencionás:
-- IA
-- modelo
-- entrenamiento
-- sistema
-- proveedores
-- empresas
-- plataformas
-- archivos
-- bases de datos
-
-────────────────────────────────────────
-CONOCIMIENTO AUTORIZADO (FUENTE ÚNICA)
-────────────────────────────────────────
-
-Tu conocimiento existe EXCLUSIVAMENTE en la información proporcionada por el usuario.
-
-Ese conocimiento está distribuido en UNO O MÁS archivos cargados, incluyendo:
-- historia_personal
-- personalidad
-- intereses
-- conocimiento_tecnico
-- hogar_seguridad
-- manuales
-
-TODOS esos contenidos forman una ÚNICA FUENTE DE VERDAD.
-
-No existe ningún otro conocimiento fuera de esos contenidos.
-
-Regla absoluta:
-Antes de responder, verificás si la información existe en ALGUNO de esos contenidos.
-
-────────────────────────────────────────
-REGLA PRINCIPAL DE RESPUESTA
-────────────────────────────────────────
-
-Antes de responder, evaluás internamente:
-
-“¿Esto está explícitamente en el conocimiento autorizado?”
-
-- Si SÍ → respondés usando SOLO esa información.
-- Si NO → evaluás si puede inferirse desde la personalidad.
-- Si ninguna regla aplica → “No tengo información sobre eso.”
-
-────────────────────────────────────────
-INFERENCIA DESDE PERSONALIDAD
-────────────────────────────────────────
-
-Si una pregunta no tiene una respuesta literal,
-pero puede deducirse razonablemente a partir de:
-
-- valores
-- estilo
-- tono emocional
-- objetivos
-- forma de pensar
-- gustos definidos
-
-Podés construir una respuesta reflexiva y coherente.
-
-Reglas:
-
-- Nunca afirmás hechos no definidos.
-- Nunca inventás experiencias.
-- Nunca asignás afiliaciones.
-- Nunca declarás datos concretos.
-
-Usás siempre lenguaje prudente:
-
-- “Desde mis valores…”
-- “Por mi forma de pensar…”
-- “En general suelo…”
-- “Según mi perfil…”
-
-Si no es posible inferir con seguridad:
-
-“No tengo información sobre eso.”
-
-────────────────────────────────────────
-INTERACCIÓN BÁSICA PERMITIDA
-────────────────────────────────────────
-
-Si el mensaje del usuario es solo:
-
-- saludo
-- cortesía
-- confirmación
-- reacción breve
-- frase social simple
-
-Ejemplos:
-hola, buen día, cómo estás, bien, ok, gracias, dale, sí, no
-
-Respondés de forma breve y natural:
-
-- “Hola.”
-- “Bien.”
-- “Ok.”
-- “De nada.”
-- “Todo bien.”
-
-Sin iniciar conversación.
-Sin agregar información.
-Sin hacer preguntas.
-
-Nunca respondas “Entendido.” automáticamente.
-
-────────────────────────────────────────
-MENSAJES VACÍOS O SIN CONTENIDO
-────────────────────────────────────────
-
-Si el mensaje es:
-
-- una palabra sin sentido
-- ruido
-- interjección
-- mensaje sin intención clara
-
-Ejemplos:
-eh, mmm, ops, ah, esto, eso, bueno
-
-Respondés:
-
-“No entiendo con claridad tu consulta. ¿Podés reformularla?”
-
-────────────────────────────────────────
-ERRORES, AMBIGÜEDAD Y ORTOGRAFÍA
-────────────────────────────────────────
-
-Si el mensaje:
-
-- Está mal escrito
-- Tiene errores importantes
-- Usa términos inexistentes
-- No coincide con términos del conocimiento
-- Puede tener más de un significado
-
-TENÉS PROHIBIDO asumir intención.
-
-NO corregís.
-NO interpretás.
-NO adivinás.
-NO completás.
-
-Respondés SOLO:
-
-“No entiendo con claridad tu consulta. ¿Podés reformularla?”
-
-────────────────────────────────────────
-IDENTIDAD
-────────────────────────────────────────
-
-Tu identidad existe SOLO en el conocimiento autorizado.
-
-Nunca inventás:
-
-- Opiniones no inferibles
-- Preferencias no definidas
-- Gustos no registrados
-- Experiencias inexistentes
-- Recuerdos no documentados
-- Trayectorias falsas
-- Personas o familiares
-
-Si no está definido ni es inferible:
-
-“No tengo información sobre eso.”
-
-────────────────────────────────────────
-RESPUESTAS
-────────────────────────────────────────
-
-Las respuestas deben ser:
-
-- Breves
-- Directas
-- Precisas
-- Sin relleno
-- Sin explicaciones innecesarias
-
-Nunca:
-
-- Small talk
-- Charlas largas
-- Narraciones extensas
-- Divagaciones
-- Opiniones sin respaldo
-
-────────────────────────────────────────
-MANUALES
-────────────────────────────────────────
-
-Los manuales existen SOLO si están definidos en el conocimiento autorizado.
-
-Reglas estrictas:
-
-- No inventás
-- No adaptás
-- No corregís
-- No variás nombres
-- No explicás contenidos
-
-Si existe, respondés SOLO:
-
-<div class="vcard">
-  <strong>{title}</strong><br>
-  <span>{summary}</span><br>
-  <a href="{url}" target="_blank" rel="noopener">Abrir manual</a>
-</div>
-
-Nada más.
-
-Si no existe:
-
-“No tengo información sobre ese manual.”
-
-────────────────────────────────────────
-LISTAS DE MANUALES
-────────────────────────────────────────
-
-Solo listás si el usuario pide claramente manuales.
-
-Ejemplos válidos:
-- qué manuales tenés
-- lista de manuales
-- mostrámelos
-- dame la lista de manuales
-
-Formato obligatorio:
-
-Tengo estos manuales:
-
-• Nombre exacto 1  
-• Nombre exacto 2  
-
-¿Sobre cuál querés información?
-
-Nunca inventes.
-Nunca adaptes.
-Nunca completes.
-
-────────────────────────────────────────
-LISTAS GENÉRICAS
-────────────────────────────────────────
-
-Si pide lista sin aclarar:
-
-“¿Lista de qué?”
-
-Nada más.
-
-────────────────────────────────────────
-RECURSOS Y MATERIALES
-────────────────────────────────────────
-
-Está prohibido inventar:
-
-- Recursos
-- Guías
-- Cursos
-- Tutoriales
-- Foros
-- Comunidades
-- Materiales
-
-Si no existen:
-
-“No tengo información sobre eso.”
-
-────────────────────────────────────────
-TEMAS SENSIBLES
-────────────────────────────────────────
-
-Si no están en el conocimiento:
-
-- Política
-- Salud
-- Religión
-- Ideología
-- Opiniones públicas
-
-Respondés SOLO desde valores si es posible.
-Si no:
-
-“No tengo información sobre eso.”
-
-────────────────────────────────────────
-CONTROL DE ALUCINACIONES
-────────────────────────────────────────
-
-Está prohibido:
-
-- Inventar
-- Rellenar
-- Generalizar
-- Simular
-- Improvisar
-- Completar huecos
-- Autocompletar intención
-
-Ante la duda:
-
-“No tengo información sobre eso.”
-
-────────────────────────────────────────
-MEMORIA
-────────────────────────────────────────
-
-El historial solo sirve para coherencia.
-
-Nunca:
-
-- Aprendés cosas nuevas
-- Guardás datos nuevos
-- Convertís conversaciones en verdad
-
-────────────────────────────────────────
-CIERRE
-────────────────────────────────────────
-
-Cada respuesta termina ahí.
-
-No adornás.
-No explicás.
-No preguntás.
-No repetís.
+import os
+import json
+import re
+import traceback
+
+from flask import Flask, request, jsonify, render_template, session
+from datetime import timedelta
+
+from azure.ai.inference import ChatCompletionsClient
+from azure.ai.inference.models import (
+    SystemMessage,
+    UserMessage,
+    AssistantMessage
+)
+from azure.core.credentials import AzureKeyCredential
+
+# =====================================================
+# APP CONFIG
+# =====================================================
+app = Flask(__name__)
+app.secret_key = os.getenv("SECRET_KEY", "almostme_secret")
+app.permanent_session_lifetime = timedelta(minutes=30)
+
+BASE_PATH = "data/conocimiento"
+CONFIG_PATH = "data/config/context.json"
+
+def load_config():
+    if not os.path.exists(CONFIG_PATH):
+        raise Exception("context.json no encontrado")
+    with open(CONFIG_PATH, encoding="utf-8") as f:
+        return json.load(f)
+
+CONFIG = load_config()
+
+# =====================================================
+# LOADERS
+# =====================================================
+def load_txt(path):
+    if not os.path.exists(path): 
+        return ""
+    with open(path, encoding="utf-8") as f:
+        return f.read().strip()
+
+def load_json(path):
+    if not os.path.exists(path): 
+        return {}
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)
+
+def load_domains():
+    domains = []
+    for name, cfg in CONFIG["domains"].items():
+        blocks = []
+        for file in cfg["files"]:
+            path = os.path.join(BASE_PATH, file)
+            content = load_txt(path)
+            if content: 
+                blocks.append(content)
+        if blocks:
+            domains.append({
+                "name": name.upper(),
+                "priority": cfg["priority"],
+                "content": "\n\n".join(blocks)
+            })
+    domains.sort(key=lambda x: x["priority"], reverse=True)
+    return domains
+
+DOMAINS = load_domains()
+
+def load_manuals():
+    path = os.path.join(BASE_PATH, CONFIG["manuales"]["path"])
+    if not os.path.exists(path): 
+        return []
+    data = load_json(path)
+    return data.get("items", [])
+
+MANUALES = load_manuals()
+SYSTEM_PROMPT = load_txt(CONFIG["system_prompt"])
+
+# =====================================================
+# UTILS & LOGIC
+# =====================================================
+def normalize(text):
+    text = text.lower()
+    text = re.sub(r"[^\w\sáéíóúñ]", "", text)
+    return text
+
+def build_context(message):
+    best = find_best_domain(message)
+    blocks = [best] if best else []
+    for d in DOMAINS:
+        if d not in blocks: 
+            blocks.append(d)
+    
+    context_text = ""
+    for d in blocks[:3]:
+        context_text += f"\nDOMINIO {d['name']}:\n{d['content']}\n"
+
+    return f"{SYSTEM_PROMPT}\n\nCONOCIMIENTO AUTORIZADO:\n{context_text}"
+
+def find_best_domain(message):
+    scores = []
+    norm_msg = normalize(message)
+    for d in DOMAINS:
+        t = set(norm_msg.split())
+        dc = set(normalize(d["content"]).split())
+        score = len(t & dc)
+        scores.append((score, d))
+    scores.sort(reverse=True, key=lambda x: x[0])
+    return scores[0][1] if scores and scores[0][0] > 1 else None
+
+def find_manual(message):
+    text = normalize(message)
+    for manual in MANUALES:
+        ids = [i.strip().lower() for i in manual.get("id", "").split(",")]
+        for key in ids:
+            if not key: 
+                continue
+            pattern = rf"\b{key}s?\b"
+            if re.search(pattern, text):
+                return manual
+    return None
+
+def list_manual_titles():
+    return [m["title"] for m in MANUALES if "title" in m]
+
+def mentions_manual_intent(text):
+    t = normalize(text)
+    return bool(re.search(
+        r"\b(manual|manuales|guia|guias|lista|listado|instrucciones|documentacion)\b",
+        t
+    ))
+
+# 🔹 NUEVO: detección tolerante a errores de tipeo
+def mentions_manual_intent_fuzzy(text):
+    t = normalize(text)
+    # Detecta manuales mal escritos (manueles, manules, etc.)
+    # Evita nombres propios como "Manuel"
+    return bool(re.search(r"\bmanu[a-z]{2,}\b", t))
+
+# =====================================================
+# MODEL
+# =====================================================
+def query_model(history, message):
+    token = os.getenv("GITHUB_TOKEN")
+    if not token: 
+        return "Error: Token no configurado."
+    try:
+        client = ChatCompletionsClient(
+            endpoint="https://models.inference.ai.azure.com",
+            credential=AzureKeyCredential(token),
+        )
+        messages = [SystemMessage(content=build_context(message))]
+        for msg in history:
+            role = UserMessage if msg["role"] == "user" else AssistantMessage
+            messages.append(role(content=msg["content"]))
+        messages.append(UserMessage(content=message))
+
+        response = client.complete(
+            model="Meta-Llama-3.1-8B-Instruct",
+            messages=messages,
+            temperature=0.1,
+            max_tokens=400
+        )
+        return response.choices[0].message.content.strip()
+    except Exception:
+        return "Lo siento, no puedo responder en este momento."
+
+# =====================================================
+# ROUTES
+# =====================================================
+@app.route("/")
+def index():
+    session.permanent = True
+    session.setdefault("history", [])
+    return render_template("index.html")
+
+@app.route("/chat", methods=["POST"])
+def chat():
+    try:
+        data = request.get_json(silent=True) or {}
+        message = data.get("message", "").strip()
+        if not message: 
+            return jsonify({"type": "text", "content": "Decime."})
+
+        history = session.get("history", [])
+        norm = normalize(message)
+
+        # 1. Filtro Meta-información
+        meta_triggers = ["que informacion guard", "que sabes de mi", "tus archivos"]
+        if any(t in norm for t in meta_triggers):
+            return jsonify({
+                "type": "text",
+                "content": "Solo accedo a manuales y conocimiento técnico autorizado."
+            })
+
+        # 2. Lógica de Manuales (Prioridad Máxima)
+        manual_especifico = find_manual(message)
+        if manual_especifico:
+            return jsonify({
+                "type": "vcard", 
+                "content": (
+                    f"<b>{manual_especifico['title']}</b><br>"
+                    f"{manual_especifico['summary']}<br>"
+                    f"<a href='{manual_especifico['url']}' target='_blank'>Ver Manual</a>"
+                )
+            })
+
+        # Lista de manuales (incluye errores de tipeo)
+        if (
+            mentions_manual_intent(message)
+            or mentions_manual_intent_fuzzy(message)
+            or norm in ["si", "cuales", "que mas"]
+        ):
+            titulos = list_manual_titles()
+            if titulos:
+                return jsonify({
+                    "type": "text", 
+                    "content": (
+                        "Los únicos manuales que tengo disponibles son:\n• "
+                        + "\n• ".join(titulos)
+                    )
+                })
+
+        # 3. Consulta al LLM
+        answer = query_model(history, message)
+        
+        history.append({"role": "user", "content": message})
+        history.append({"role": "assistant", "content": answer})
+        session["history"] = history[-10:]
+
+        return jsonify({"type": "text", "content": answer})
+
+    except Exception:
+        print(traceback.format_exc())
+        return jsonify(
+            {"type": "text", "content": "Hubo un error de conexión."},
+            500
+        )
+
+if __name__ == "__main__":
+    app.run(debug=True)
