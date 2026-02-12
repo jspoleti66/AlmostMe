@@ -1,144 +1,220 @@
-from flask import Flask, request, jsonify
-import re
-import requests
 import os
+import json
+import re
+import traceback
 
+from flask import Flask, request, jsonify, render_template, session
+from datetime import timedelta
+
+from azure.ai.inference import ChatCompletionsClient
+from azure.ai.inference.models import (
+    SystemMessage,
+    UserMessage,
+    AssistantMessage
+)
+from azure.core.credentials import AzureKeyCredential
+
+# =====================================================
+# APP CONFIG
+# =====================================================
 app = Flask(__name__)
+app.secret_key = os.getenv("SECRET_KEY", "almostme_secret")
+app.permanent_session_lifetime = timedelta(minutes=30)
 
-# =========================
-# Configuración
-# =========================
+BASE_PATH = "data/conocimiento"
+CONFIG_PATH = "data/config/context.json"
 
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
-OPENROUTER_MODEL = "openai/gpt-4o-mini"  # o el que uses
+def load_config():
+    if not os.path.exists(CONFIG_PATH):
+        raise Exception("context.json no encontrado")
+    with open(CONFIG_PATH, encoding="utf-8") as f:
+        return json.load(f)
 
-# Manuales disponibles (fuente única de verdad)
-MANUALES = [
-    "Manual de Piscina",
-    "Manual Peugeot 2008"
-]
+CONFIG = load_config()
 
-# =========================
-# Helpers de intención
-# =========================
+# =====================================================
+# LOADERS
+# =====================================================
+def load_txt(path):
+    if not os.path.exists(path):
+        return ""
+    with open(path, encoding="utf-8") as f:
+        return f.read().strip()
 
-def is_manual_list_request(text: str) -> bool:
-    """
-    Detecta pedidos claros y explícitos de lista de manuales.
-    """
-    text = text.lower().strip()
-    return bool(re.search(r"\bmanuales\b", text)) or text == "manual"
+def load_json(path):
+    if not os.path.exists(path):
+        return {}
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)
 
+def load_domains():
+    domains = []
+    for name, cfg in CONFIG["domains"].items():
+        blocks = []
+        for file in cfg["files"]:
+            path = os.path.join(BASE_PATH, file)
+            content = load_txt(path)
+            if content:
+                blocks.append(content)
+        if blocks:
+            domains.append({
+                "name": name.upper(),
+                "priority": cfg["priority"],
+                "content": "\n\n".join(blocks)
+            })
+    domains.sort(key=lambda x: x["priority"], reverse=True)
+    return domains
 
-def is_specific_manual_request(text: str) -> str | None:
-    """
-    Detecta pedidos del tipo: 'manual piscina', 'manual peugeot'
-    Devuelve el nombre del manual si hay match.
-    """
+DOMAINS = load_domains()
+
+def load_manuals():
+    path = os.path.join(BASE_PATH, CONFIG["manuales"]["path"])
+    if not os.path.exists(path):
+        return []
+    data = load_json(path)
+    return data.get("items", [])
+
+MANUALES = load_manuals()
+SYSTEM_PROMPT = load_txt(CONFIG["system_prompt"])
+
+# =====================================================
+# UTILS (SIMPLIFICADOS)
+# =====================================================
+def normalize(text):
     text = text.lower()
+    return re.sub(r"[^\w\sáéíóúñ]", "", text)
 
-    if not text.startswith("manual "):
-        return None
+def mentions_manual_word(text):
+    """
+    Detecta SOLO manual / manuales (exactos).
+    """
+    return bool(re.search(r"\bmanual(es)?\b", normalize(text)))
 
+def mentions_manual_like_but_not_manual(text):
+    """
+    Detecta palabras tipo manuel / manueles / manules / etc.
+    PERO excluye manual / manuales
+    """
+    tokens = normalize(text).split()
+    for t in tokens:
+        if t.startswith("manu") and t not in ("manual", "manuales"):
+            return True
+    return False
+
+def find_manual(message):
+    text = normalize(message)
     for manual in MANUALES:
-        key = manual.lower().replace("manual ", "")
-        if key in text:
-            return manual
-
+        ids = [i.strip().lower() for i in manual.get("id", "").split(",")]
+        for key in ids:
+            if key and re.search(rf"\b{re.escape(key)}\b", text):
+                return manual
     return None
 
+def list_manual_titles():
+    return [m["title"] for m in MANUALES if "title" in m]
 
-# =========================
-# Respuestas hard
-# =========================
+def build_context(message):
+    context_text = ""
+    for d in DOMAINS[:3]:
+        context_text += f"\nDOMINIO {d['name']}:\n{d['content']}\n"
+    return f"{SYSTEM_PROMPT}\n\nCONOCIMIENTO AUTORIZADO:\n{context_text}"
 
-def list_manuales():
-    lines = "\n".join(f"• {m}" for m in MANUALES)
-    return f"Los únicos manuales que tengo disponibles son:\n{lines}"
+# =====================================================
+# MODEL (SIN CAMBIOS)
+# =====================================================
+def query_model(history, message):
+    token = os.getenv("GITHUB_TOKEN")
+    if not token:
+        return "Error: Token no configurado."
+    try:
+        client = ChatCompletionsClient(
+            endpoint="https://models.inference.ai.azure.com",
+            credential=AzureKeyCredential(token),
+        )
 
+        messages = [SystemMessage(content=build_context(message))]
+        for msg in history:
+            role = UserMessage if msg["role"] == "user" else AssistantMessage
+            messages.append(role(content=msg["content"]))
+        messages.append(UserMessage(content=message))
 
-def show_manual(manual_name: str):
-    # Placeholder: acá después podés linkear PDF, HTML, etc.
-    return f"Puedo ayudarte con el **{manual_name}**. Decime qué información necesitás."
+        response = client.complete(
+            model="Meta-Llama-3.1-8B-Instruct",
+            messages=messages,
+            temperature=0.1,
+            max_tokens=400
+        )
+        return response.choices[0].message.content.strip()
+    except Exception:
+        return "Lo siento, no puedo responder en este momento."
 
-
-# =========================
-# Llamada al modelo
-# =========================
-
-def call_llm(user_message: str) -> str:
-    payload = {
-        "model": OPENROUTER_MODEL,
-        "messages": [
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": user_message}
-        ]
-    }
-
-    headers = {
-        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-        "Content-Type": "application/json"
-    }
-
-    response = requests.post(
-        "https://openrouter.ai/api/v1/chat/completions",
-        json=payload,
-        headers=headers,
-        timeout=30
-    )
-
-    response.raise_for_status()
-    return response.json()["choices"][0]["message"]["content"]
-
-
-# =========================
-# System prompt
-# =========================
-
-SYSTEM_PROMPT = """
-Sos AlmostMe.
-
-Reglas estrictas:
-- NO asumas intención si el mensaje es ambiguo o está mal escrito.
-- NO corrijas palabras del usuario.
-- Si no entendés con claridad la consulta, respondé únicamente:
-  "No entiendo con claridad tu consulta. ¿Podés reformularla?"
-
-Tenés información personal (familia, contexto) y podés responder normalmente
-cuando la pregunta sea clara.
-
-NO inventes manuales.
-NO describas contenidos de manuales inexistentes.
-"""
-
-# =========================
-# Endpoint principal
-# =========================
+# =====================================================
+# ROUTES
+# =====================================================
+@app.route("/")
+def index():
+    session.permanent = True
+    session.setdefault("history", [])
+    return render_template("index.html")
 
 @app.route("/chat", methods=["POST"])
 def chat():
-    data = request.get_json()
-    user_message = data.get("message", "").strip()
-
-    if not user_message:
-        return jsonify({"response": "Hola."})
-
-    # 1️⃣ Pedido claro de lista de manuales
-    if is_manual_list_request(user_message):
-        return jsonify({"response": list_manuales()})
-
-    # 2️⃣ Pedido claro de un manual específico
-    manual = is_specific_manual_request(user_message)
-    if manual:
-        return jsonify({"response": show_manual(manual)})
-
-    # 3️⃣ Todo lo demás → modelo
     try:
-        answer = call_llm(user_message)
-        return jsonify({"response": answer})
-    except Exception as e:
-        return jsonify({"response": "Ocurrió un error procesando tu consulta."}), 500
+        data = request.get_json(silent=True) or {}
+        message = data.get("message", "").strip()
 
+        if not message:
+            return jsonify({"type": "text", "content": "Decime."})
+
+        history = session.get("history", [])
+        norm = normalize(message)
+
+        # 1. Meta-info
+        if any(t in norm for t in ["que informacion guard", "que sabes de mi", "tus archivos"]):
+            return jsonify({
+                "type": "text",
+                "content": "Solo accedo a manuales y conocimiento técnico autorizado."
+            })
+
+        # 2. Palabra parecida a manual, pero NO manual → cortar
+        if mentions_manual_like_but_not_manual(message) and not mentions_manual_word(message):
+            return jsonify({
+                "type": "text",
+                "content": "No entiendo con claridad tu consulta. ¿Podés reformularla?"
+            })
+
+        # 3. Manual específico
+        manual = find_manual(message)
+        if manual:
+            return jsonify({
+                "type": "vcard",
+                "content": (
+                    f"<b>{manual['title']}</b><br>"
+                    f"{manual['summary']}<br>"
+                    f"<a href='{manual['url']}' target='_blank'>Ver Manual</a>"
+                )
+            })
+
+        # 4. Lista de manuales (solo manual / manuales)
+        if mentions_manual_word(message):
+            titles = list_manual_titles()
+            if titles:
+                return jsonify({
+                    "type": "text",
+                    "content": "Los únicos manuales que tengo disponibles son:\n• " + "\n• ".join(titles)
+                })
+
+        # 5. LLM
+        answer = query_model(history, message)
+        history.append({"role": "user", "content": message})
+        history.append({"role": "assistant", "content": answer})
+        session["history"] = history[-10:]
+
+        return jsonify({"type": "text", "content": answer})
+
+    except Exception:
+        print(traceback.format_exc())
+        return jsonify({"type": "text", "content": "Hubo un error de conexión."}), 500
 
 if __name__ == "__main__":
     app.run(debug=True)
