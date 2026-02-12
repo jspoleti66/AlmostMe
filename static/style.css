@@ -87,7 +87,7 @@ body{
   background:#020617;
 }
 
-/* Voice rings */
+/* ===== SPEAKING (VOICE RING) ===== */
 
 .avatar-container::before,
 .avatar-container::after{
@@ -114,6 +114,33 @@ body{
   0%{transform:scale(1);opacity:.8}
   70%{opacity:.25}
   100%{transform:scale(1.9);opacity:0}
+}
+
+/* ===== THINKING (NO RING) ===== */
+
+.avatar-container.thinking .avatar{
+  animation:thinkingPulse 2.4s ease-in-out infinite;
+  box-shadow:
+    0 0 14px 2px rgba(96,165,250,.25),
+    0 0 22px 4px rgba(96,165,250,.45);
+}
+
+@keyframes thinkingPulse{
+  0%{
+    box-shadow:
+      0 0 14px 2px rgba(96,165,250,.25),
+      0 0 22px 4px rgba(96,165,250,.35);
+  }
+  50%{
+    box-shadow:
+      0 0 18px 3px rgba(96,165,250,.45),
+      0 0 28px 6px rgba(96,165,250,.55);
+  }
+  100%{
+    box-shadow:
+      0 0 14px 2px rgba(96,165,250,.25),
+      0 0 22px 4px rgba(96,165,250,.35);
+  }
 }
 
 /* ===== HEADER INFO ===== */
