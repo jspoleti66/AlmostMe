@@ -36,13 +36,13 @@ CONFIG = load_config()
 # LOADERS
 # =====================================================
 def load_txt(path):
-    if not os.path.exists(path): 
+    if not os.path.exists(path):
         return ""
     with open(path, encoding="utf-8") as f:
         return f.read().strip()
 
 def load_json(path):
-    if not os.path.exists(path): 
+    if not os.path.exists(path):
         return {}
     with open(path, encoding="utf-8") as f:
         return json.load(f)
@@ -54,7 +54,7 @@ def load_domains():
         for file in cfg["files"]:
             path = os.path.join(BASE_PATH, file)
             content = load_txt(path)
-            if content: 
+            if content:
                 blocks.append(content)
         if blocks:
             domains.append({
@@ -69,7 +69,7 @@ DOMAINS = load_domains()
 
 def load_manuals():
     path = os.path.join(BASE_PATH, CONFIG["manuales"]["path"])
-    if not os.path.exists(path): 
+    if not os.path.exists(path):
         return []
     data = load_json(path)
     return data.get("items", [])
@@ -89,9 +89,9 @@ def build_context(message):
     best = find_best_domain(message)
     blocks = [best] if best else []
     for d in DOMAINS:
-        if d not in blocks: 
+        if d not in blocks:
             blocks.append(d)
-    
+
     context_text = ""
     for d in blocks[:3]:
         context_text += f"\nDOMINIO {d['name']}:\n{d['content']}\n"
@@ -114,7 +114,7 @@ def find_manual(message):
     for manual in MANUALES:
         ids = [i.strip().lower() for i in manual.get("id", "").split(",")]
         for key in ids:
-            if not key: 
+            if not key:
                 continue
             pattern = rf"\b{key}s?\b"
             if re.search(pattern, text):
@@ -131,19 +131,25 @@ def mentions_manual_intent(text):
         t
     ))
 
-# 🔹 NUEVO: detección tolerante a errores de tipeo
+# 🔹 detección tolerante a errores de tipeo (NO dispara sola)
 def mentions_manual_intent_fuzzy(text):
     t = normalize(text)
-    # Detecta manuales mal escritos (manueles, manules, etc.)
-    # Evita nombres propios como "Manuel"
     return bool(re.search(r"\bmanu[a-z]{2,}\b", t))
+
+# 🔹 NUEVO: detección de preguntas sobre personas
+def is_person_question(text):
+    t = normalize(text)
+    return bool(re.search(
+        r"\b(quien es|quien fue|quien era|quienes son)\b",
+        t
+    ))
 
 # =====================================================
 # MODEL
 # =====================================================
 def query_model(history, message):
     token = os.getenv("GITHUB_TOKEN")
-    if not token: 
+    if not token:
         return "Error: Token no configurado."
     try:
         client = ChatCompletionsClient(
@@ -180,7 +186,7 @@ def chat():
     try:
         data = request.get_json(silent=True) or {}
         message = data.get("message", "").strip()
-        if not message: 
+        if not message:
             return jsonify({"type": "text", "content": "Decime."})
 
         history = session.get("history", [])
@@ -194,11 +200,11 @@ def chat():
                 "content": "Solo accedo a manuales y conocimiento técnico autorizado."
             })
 
-        # 2. Lógica de Manuales (Prioridad Máxima)
+        # 2. Manual específico (máxima prioridad)
         manual_especifico = find_manual(message)
         if manual_especifico:
             return jsonify({
-                "type": "vcard", 
+                "type": "vcard",
                 "content": (
                     f"<b>{manual_especifico['title']}</b><br>"
                     f"{manual_especifico['summary']}<br>"
@@ -206,16 +212,22 @@ def chat():
                 )
             })
 
-        # Lista de manuales (incluye errores de tipeo)
+        # 2.b Lista de manuales (intención documental REAL)
         if (
-            mentions_manual_intent(message)
-            or mentions_manual_intent_fuzzy(message)
-            or norm in ["si", "cuales", "que mas"]
+            not is_person_question(message) and
+            (
+                mentions_manual_intent(message)
+                or (
+                    mentions_manual_intent_fuzzy(message)
+                    and any(k in norm for k in ["que", "cuales", "lista", "tenes", "tienes"])
+                )
+                or norm in ["si", "cuales", "que mas"]
+            )
         ):
             titulos = list_manual_titles()
             if titulos:
                 return jsonify({
-                    "type": "text", 
+                    "type": "text",
                     "content": (
                         "Los únicos manuales que tengo disponibles son:\n• "
                         + "\n• ".join(titulos)
@@ -224,7 +236,7 @@ def chat():
 
         # 3. Consulta al LLM
         answer = query_model(history, message)
-        
+
         history.append({"role": "user", "content": message})
         history.append({"role": "assistant", "content": answer})
         session["history"] = history[-10:]
