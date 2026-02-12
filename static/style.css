@@ -47,8 +47,6 @@ body{
 
 .header-actions{
   margin-left:auto;
-  display:flex;
-  gap:6px;
 }
 
 .header-actions button{
@@ -65,7 +63,7 @@ body{
   background:#0f172a;
 }
 
-/* ===== AVATAR ===== */
+/* ===== AVATAR VIDEO ===== */
 
 .avatar-container{
   position:relative;
@@ -75,11 +73,12 @@ body{
   display:flex;
   align-items:center;
   justify-content:center;
+  overflow:hidden;
 }
 
-.avatar{
-  width:42px;
-  height:42px;
+.avatar-video{
+  width:44px;
+  height:44px;
   border-radius:50%;
   object-fit:cover;
   z-index:2;
@@ -87,7 +86,7 @@ body{
   background:#020617;
 }
 
-/* ===== SPEAKING (VOICE RING) ===== */
+/* ===== SPEAKING RING ===== */
 
 .avatar-container::before,
 .avatar-container::after{
@@ -118,29 +117,17 @@ body{
 
 /* ===== THINKING (NO RING) ===== */
 
-.avatar-container.thinking .avatar{
+.avatar-container.thinking .avatar-video{
   animation:thinkingPulse 2.4s ease-in-out infinite;
   box-shadow:
     0 0 14px 2px rgba(96,165,250,.25),
-    0 0 22px 4px rgba(96,165,250,.45);
+    0 0 26px 6px rgba(96,165,250,.45);
 }
 
 @keyframes thinkingPulse{
-  0%{
-    box-shadow:
-      0 0 14px 2px rgba(96,165,250,.25),
-      0 0 22px 4px rgba(96,165,250,.35);
-  }
-  50%{
-    box-shadow:
-      0 0 18px 3px rgba(96,165,250,.45),
-      0 0 28px 6px rgba(96,165,250,.55);
-  }
-  100%{
-    box-shadow:
-      0 0 14px 2px rgba(96,165,250,.25),
-      0 0 22px 4px rgba(96,165,250,.35);
-  }
+  0%{box-shadow:0 0 14px 2px rgba(96,165,250,.25)}
+  50%{box-shadow:0 0 28px 6px rgba(96,165,250,.55)}
+  100%{box-shadow:0 0 14px 2px rgba(96,165,250,.25)}
 }
 
 /* ===== HEADER INFO ===== */
@@ -182,12 +169,6 @@ body{
   overflow-y:auto;
 }
 
-.chat::-webkit-scrollbar{width:6px}
-.chat::-webkit-scrollbar-thumb{
-  background:#1e293b;
-  border-radius:3px;
-}
-
 /* ===== MESSAGES ===== */
 
 .msg{
@@ -196,12 +177,6 @@ body{
   border-radius:16px;
   font-size:14px;
   line-height:1.5;
-  animation:fade .18s ease;
-}
-
-@keyframes fade{
-  from{opacity:0;transform:translateY(6px)}
-  to{opacity:1}
 }
 
 .user{
@@ -217,25 +192,6 @@ body{
   color:#e5e7eb;
   border:1px solid #1e293b;
   border-bottom-left-radius:4px;
-}
-
-/* ===== TYPING ===== */
-
-.typing{
-  display:flex;
-  gap:5px;
-  font-weight:bold;
-  opacity:.7;
-}
-
-.typing span{animation:blink 1.4s infinite both}
-.typing span:nth-child(2){animation-delay:.2s}
-.typing span:nth-child(3){animation-delay:.4s}
-
-@keyframes blink{
-  0%{opacity:.2}
-  20%{opacity:1}
-  100%{opacity:.2}
 }
 
 /* ===== INPUT ===== */
@@ -256,7 +212,6 @@ body{
   background:#020617;
   color:white;
   border:1px solid #1e293b;
-  outline:none;
 }
 
 .input-area input:focus{
