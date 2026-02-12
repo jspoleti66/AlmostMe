@@ -3,10 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AlmostMe – Clon Interactivo</title>
 
-  <meta name="theme-color" content="#020617" />
-  <meta name="description" content="AlmostMe · Clon interactivo en tiempo real" />
+  <title>AlmostMe – Clon Interactivo</title>
 
   <link rel="stylesheet" href="/static/style.css" />
   <link rel="icon" href="/static/favicon.ico" />
@@ -16,35 +14,24 @@
 
   <div class="app">
 
+    <!-- AVATAR VIDEO FLOTANTE -->
+    <div id="floatingAvatar" class="floating-avatar">
+      <video
+        class="avatar-video"
+        src="/static/avatar.mp4"
+        autoplay
+        muted
+        loop
+        playsinline>
+      </video>
+    </div>
+
     <!-- HEADER -->
     <header class="header">
-
-      <!-- AVATAR VIDEO -->
-      <div class="avatar-container" id="avatarBox">
-        <video
-          class="avatar-video"
-          src="/static/avatar.mp4"
-          autoplay
-          loop
-          muted
-          playsinline
-        ></video>
-      </div>
-
-      <!-- INFO -->
       <div class="header-info">
         <div class="header-title">AlmostMe</div>
-        <div class="status">
-          <span class="dot"></span>
-          Online
-        </div>
+        <div class="status">● Online</div>
       </div>
-
-      <!-- ACTIONS -->
-      <div class="header-actions">
-        <button id="clearChat" title="Limpiar chat">🗑️</button>
-      </div>
-
     </header>
 
     <!-- CHAT -->
@@ -55,7 +42,7 @@
       <input
         id="input"
         type="text"
-        placeholder="Escribí tu mensaje…"
+        placeholder="Escribí tu mensaje..."
         autocomplete="off"
         required
       />
