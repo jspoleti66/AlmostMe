@@ -116,7 +116,7 @@ def find_manual(message):
         for key in ids:
             if not key:
                 continue
-            pattern = rf"\b{key}s?\b"
+            pattern = rf"\b{re.escape(key)}\b"
             if re.search(pattern, text):
                 return manual
     return None
@@ -127,20 +127,7 @@ def list_manual_titles():
 def mentions_manual_intent(text):
     t = normalize(text)
     return bool(re.search(
-        r"\b(manual|manuales|guia|guias|lista|listado|instrucciones|documentacion)\b",
-        t
-    ))
-
-# 🔹 detección tolerante a errores de tipeo (NO dispara sola)
-def mentions_manual_intent_fuzzy(text):
-    t = normalize(text)
-    return bool(re.search(r"\bmanu[a-z]{2,}\b", t))
-
-# 🔹 NUEVO: detección de preguntas sobre personas
-def is_person_question(text):
-    t = normalize(text)
-    return bool(re.search(
-        r"\b(quien es|quien fue|quien era|quienes son)\b",
+        r"\b(manual|manuales|guia|guias|instrucciones|documentacion|lista de manuales)\b",
         t
     ))
 
@@ -156,10 +143,13 @@ def query_model(history, message):
             endpoint="https://models.inference.ai.azure.com",
             credential=AzureKeyCredential(token),
         )
+
         messages = [SystemMessage(content=build_context(message))]
+
         for msg in history:
             role = UserMessage if msg["role"] == "user" else AssistantMessage
             messages.append(role(content=msg["content"]))
+
         messages.append(UserMessage(content=message))
 
         response = client.complete(
@@ -193,14 +183,20 @@ def chat():
         norm = normalize(message)
 
         # 1. Filtro Meta-información
-        meta_triggers = ["que informacion guard", "que sabes de mi", "tus archivos"]
+        meta_triggers = [
+            "que informacion guard",
+            "que sabes de mi",
+            "tus archivos"
+        ]
         if any(t in norm for t in meta_triggers):
             return jsonify({
                 "type": "text",
                 "content": "Solo accedo a manuales y conocimiento técnico autorizado."
             })
 
-        # 2. Manual específico (máxima prioridad)
+        # 2. MANUALES (SOLO CON INTENCIÓN EXPLÍCITA)
+
+        # 2.1 Manual específico por ID exacto
         manual_especifico = find_manual(message)
         if manual_especifico:
             return jsonify({
@@ -212,18 +208,8 @@ def chat():
                 )
             })
 
-        # 2.b Lista de manuales (intención documental REAL)
-        if (
-            not is_person_question(message) and
-            (
-                mentions_manual_intent(message)
-                or (
-                    mentions_manual_intent_fuzzy(message)
-                    and any(k in norm for k in ["que", "cuales", "lista", "tenes", "tienes"])
-                )
-                or norm in ["si", "cuales", "que mas"]
-            )
-        ):
+        # 2.2 Lista de manuales SOLO si se pidió explícitamente
+        if mentions_manual_intent(message):
             titulos = list_manual_titles()
             if titulos:
                 return jsonify({
@@ -234,7 +220,7 @@ def chat():
                     )
                 })
 
-        # 3. Consulta al LLM
+        # 3. LLM (charla general, personas, hipótesis, etc.)
         answer = query_model(history, message)
 
         history.append({"role": "user", "content": message})
