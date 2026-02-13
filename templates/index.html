@@ -3,57 +3,46 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <title>AlmostMe – Clon Interactivo</title>
-
+  <title>AlmostMe</title>
   <link rel="stylesheet" href="/static/style.css" />
-  <link rel="icon" href="/static/favicon.ico" />
 </head>
-
 <body>
 
-  <div class="app">
+<div class="app">
 
-    <!-- HEADER -->
-    <header class="header">
-      <div class="header-info">
-        <div class="header-title">AlmostMe</div>
-        <div class="status">● Online</div>
-      </div>
-    </header>
+  <div class="header">
+    <div>
+      <div class="header-title">AlmostMe</div>
+      <div class="status">● Online</div>
+    </div>
+  </div>
 
-    <!-- CHAT -->
-    <main id="chat" class="chat">
+  <!-- CONTENEDOR GENERAL -->
+  <div class="chat-container">
 
-      <!-- AVATAR DENTRO DEL CHAT -->
-      <div id="chatAvatar" class="chat-avatar">
-        <video
-          id="avatarVideo"
-          class="avatar-video"
-          src="/static/avatar.mp4"
-          muted
-          playsinline>
-        </video>
-      </div>
+    <!-- CHAT SCROLLEABLE -->
+    <div id="chat" class="chat"></div>
 
-    </main>
-
-    <!-- INPUT -->
-    <form id="form" class="input-area">
-      <input
-        id="input"
-        type="text"
-        placeholder="Escribí tu mensaje..."
-        autocomplete="off"
-        required
-      />
-      <button type="submit">➤</button>
-    </form>
+    <!-- AVATAR FIJO -->
+    <div id="avatar" class="chat-avatar">
+      <video 
+        id="avatarVideo"
+        class="avatar-video"
+        src="/static/avatar.mp4"
+        preload="auto"
+      ></video>
+    </div>
 
   </div>
 
-  <script src="/static/script.js"></script>
+  <!-- INPUT -->
+  <div class="input-area">
+    <input id="messageInput" type="text" placeholder="Escribí tu mensaje..." />
+    <button id="sendBtn">➤</button>
+  </div>
 
+</div>
+
+<script src="/static/script.js"></script>
 </body>
 </html>
-
