@@ -1,67 +1,59 @@
-const chat = document.getElementById("chat");
-const form = document.getElementById("form");
-const input = document.getElementById("input");
-const avatar = document.getElementById("chatAvatar");
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-/* ===== AVATAR STATES ===== */
+  <title>AlmostMe – Clon Interactivo</title>
 
-function setThinking(){
-  avatar.classList.remove("speaking");
-  avatar.classList.add("thinking");
-}
+  <link rel="stylesheet" href="/static/style.css" />
+  <link rel="icon" href="/static/favicon.ico" />
+</head>
 
-function setSpeaking(){
-  avatar.classList.remove("thinking");
-  avatar.classList.add("speaking");
-}
+<body>
 
-function clearAvatar(){
-  avatar.classList.remove("thinking","speaking");
-}
+  <div class="app">
 
-/* ===== CHAT ===== */
+    <!-- HEADER -->
+    <header class="header">
+      <div class="header-info">
+        <div class="header-title">AlmostMe</div>
+        <div class="status">● Online</div>
+      </div>
+    </header>
 
-function addMessage(text,type){
-  const div=document.createElement("div");
-  div.className=`msg ${type}`;
-  div.innerHTML=(text || "…").replace(/\n/g,"<br>");
-  chat.appendChild(div);
-  chat.scrollTop=chat.scrollHeight;
-}
+    <!-- CHAT -->
+    <main id="chat" class="chat">
 
-/* ===== FORM ===== */
+      <!-- AVATAR DENTRO DEL CHAT -->
+      <div id="chatAvatar" class="chat-avatar">
+        <video
+          class="avatar-video"
+          src="/static/avatar.mp4"
+          autoplay
+          muted
+          loop
+          playsinline>
+        </video>
+      </div>
 
-form.addEventListener("submit",async(e)=>{
-  e.preventDefault();
+    </main>
 
-  const text=input.value.trim();
-  if(!text) return;
+    <!-- INPUT -->
+    <form id="form" class="input-area">
+      <input
+        id="input"
+        type="text"
+        placeholder="Escribí tu mensaje..."
+        autocomplete="off"
+        required
+      />
+      <button type="submit">➤</button>
+    </form>
 
-  addMessage(text,"user");
-  input.value="";
+  </div>
 
-  setThinking();
+  <script src="/static/script.js"></script>
 
-  try{
-    const res=await fetch("/chat",{
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body:JSON.stringify({ message:text })
-    });
-
-    if(!res.ok) throw new Error("HTTP error");
-
-    const data=await res.json();
-    const reply = data.content || data.response || "Sin respuesta";
-
-    setSpeaking();
-    addMessage(reply,"bot");
-
-    setTimeout(clearAvatar, Math.min(2500, reply.length * 25));
-
-  }catch(err){
-    console.error(err);
-    clearAvatar();
-    addMessage("No pude conectar con el servidor","bot");
-  }
-});
+</body>
+</html>
