@@ -4,9 +4,12 @@ const input = document.getElementById("input");
 const avatar = document.getElementById("chatAvatar");
 const video = document.getElementById("avatarVideo");
 
+/* ===== CONFIG ===== */
+const WORDS_PER_SECOND = 2.7;
+
 /* ===== VIDEO CONTROL ===== */
 
-function playVideoOnce(){
+function playVideo(){
   video.currentTime = 0;
   video.play();
 }
@@ -21,12 +24,12 @@ function stopVideo(){
 function startThinking(){
   avatar.classList.add("floating","thinking");
   avatar.classList.remove("speaking");
-  playVideoOnce();
 }
 
 function startSpeaking(){
   avatar.classList.remove("thinking");
   avatar.classList.add("speaking");
+  playVideo();
 }
 
 function stopAvatar(){
@@ -42,6 +45,14 @@ function addMessage(text,type){
   div.innerHTML=(text || "…").replace(/\n/g,"<br>");
   chat.appendChild(div);
   chat.scrollTop=chat.scrollHeight;
+}
+
+/* ===== DURACIÓN REALISTA ===== */
+
+function calculateSpeechDuration(text){
+  const words = text.trim().split(/\s+/).length;
+  const seconds = words / WORDS_PER_SECOND;
+  return seconds * 1000;
 }
 
 /* ===== FORM ===== */
@@ -69,10 +80,15 @@ form.addEventListener("submit",async(e)=>{
     const data=await res.json();
     const reply = data.content || data.response || "Sin respuesta";
 
-    startSpeaking();
     addMessage(reply,"bot");
 
-    setTimeout(stopAvatar, Math.min(2500, reply.length * 25));
+    startSpeaking();
+
+    const duration = calculateSpeechDuration(reply);
+
+    setTimeout(() => {
+      stopAvatar();
+    }, duration);
 
   }catch(err){
     console.error(err);
