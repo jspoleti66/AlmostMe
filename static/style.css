@@ -1,3 +1,8 @@
+/* ===== GLOBAL FIX ===== */
+html, body {
+  overflow-x: hidden;
+}
+
 /* ===== RESET ===== */
 *{
   box-sizing:border-box;
@@ -26,7 +31,7 @@ body{
   box-shadow:
     0 0 0 1px #1e293b,
     0 25px 80px rgba(0,0,0,.8);
-  overflow:hidden;
+  overflow:hidden; /* blindaje */
 }
 
 /* ===== HEADER ===== */
@@ -64,8 +69,7 @@ body{
 .chat-avatar{
   position:sticky;
   top:12px;
-  margin-left:auto;
-  margin-right:6px;
+  align-self:flex-end; /* sin margin hacks */
   width:110px;
   height:110px;
   z-index:10;
@@ -95,7 +99,7 @@ body{
   transform:translateY(-6px);
 }
 
-/* ===== STATES ===== */
+/* ===== AVATAR STATES ===== */
 .chat-avatar.speaking::after{
   content:"";
   position:absolute;
@@ -113,11 +117,13 @@ body{
 
 /* ===== MESSAGES ===== */
 .msg{
-  max-width:82%;
+  max-width:80%;
   padding:10px 14px;
   border-radius:16px;
   font-size:14px;
   line-height:1.5;
+  word-wrap:break-word;
+  overflow-wrap:break-word;
 }
 
 .user{
