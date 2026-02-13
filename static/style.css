@@ -1,10 +1,11 @@
-/* ===== GLOBAL ===== */
+/* ===== GLOBAL FIX ===== */
 html, body{
   margin:0;
   padding:0;
   overflow-x:hidden;
 }
 
+/* ===== RESET ===== */
 *{
   box-sizing:border-box;
   margin:0;
@@ -65,16 +66,21 @@ body{
 /* ===== CHAT ===== */
 .chat{
   flex:1;
-  padding:16px 12px 120px 12px;
+  padding:16px 12px 120px 12px; /* espacio inferior */
   display:flex;
   flex-direction:column;
   gap:12px;
   overflow-y:auto;
   overflow-x:hidden;
-  justify-content:flex-end;
 }
 
-/* ===== AVATAR ===== */
+/* 🔥 Mantiene mensajes abajo cuando hay pocos */
+.chat::before{
+  content:"";
+  flex:1;
+}
+
+/* ===== AVATAR FIJO (NO STICKY) ===== */
 .chat-avatar{
   position:absolute;
   top:16px;
@@ -85,6 +91,7 @@ body{
   pointer-events:none;
 }
 
+/* VIDEO */
 .avatar-video{
   width:100%;
   height:100%;
@@ -93,18 +100,17 @@ body{
   object-fit:cover;
   border:3px solid #2563eb;
   background:#020617;
+
   box-shadow:
     0 12px 28px rgba(0,0,0,.55),
     0 0 0 1px rgba(37,99,235,.35);
-  transition:transform .6s ease;
+
+  transition:box-shadow .3s ease;
 }
 
-/* FLOAT */
-.chat-avatar.floating .avatar-video{
-  transform:translateY(-6px);
-}
+/* ❌ Eliminado movimiento vertical */
 
-/* SPEAKING RING */
+/* ===== STATES ===== */
 .chat-avatar.speaking::after{
   content:"";
   position:absolute;
@@ -114,14 +120,15 @@ body{
   animation:ringPulse 1.4s ease-out infinite;
 }
 
-@keyframes ringPulse{
-  0%{transform:scale(.9);opacity:.8}
-  100%{transform:scale(1.35);opacity:0}
+.chat-avatar.thinking .avatar-video{
+  box-shadow:
+    0 0 22px rgba(96,165,250,.55),
+    0 0 0 1px rgba(96,165,250,.5);
 }
 
 /* ===== MESSAGES ===== */
 .msg{
-  max-width:80%;
+  max-width:82%;
   padding:10px 14px;
   border-radius:16px;
   font-size:14px;
@@ -170,4 +177,10 @@ body{
   color:white;
   font-size:16px;
   cursor:pointer;
+}
+
+/* ===== ANIMATION ===== */
+@keyframes ringPulse{
+  0%{transform:scale(.9);opacity:.8}
+  100%{transform:scale(1.35);opacity:0}
 }
