@@ -70,10 +70,9 @@ body{
   height:110px;
   z-index:10;
   pointer-events:none;
-
-  animation:floatIdle 5s ease-in-out infinite;
 }
 
+/* VIDEO */
 .avatar-video{
   width:100%;
   height:100%;
@@ -85,16 +84,25 @@ body{
   box-shadow:
     0 12px 28px rgba(0,0,0,.55),
     0 0 0 1px rgba(37,99,235,.35);
+
+  transition:
+    transform .6s ease,
+    box-shadow .6s ease;
 }
 
-/* ===== AVATAR STATES ===== */
+/* ===== FLOAT ACTIVE (NO LOOP) ===== */
+.chat-avatar.floating .avatar-video{
+  transform:translateY(-6px);
+}
+
+/* ===== STATES ===== */
 .chat-avatar.speaking::after{
   content:"";
   position:absolute;
   inset:-10px;
   border-radius:50%;
   border:2px solid rgba(96,165,250,.6);
-  animation:ringPulse 1.5s infinite;
+  animation:ringPulse 1.4s ease-out infinite;
 }
 
 .chat-avatar.thinking .avatar-video{
@@ -155,14 +163,8 @@ body{
   cursor:pointer;
 }
 
-/* ===== ANIMATIONS ===== */
+/* ===== ANIMATION ===== */
 @keyframes ringPulse{
   0%{transform:scale(.9);opacity:.8}
   100%{transform:scale(1.35);opacity:0}
-}
-
-@keyframes floatIdle{
-  0%{transform:translateY(0)}
-  50%{transform:translateY(8px)}
-  100%{transform:translateY(0)}
 }
