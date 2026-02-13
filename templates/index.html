@@ -3,46 +3,59 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AlmostMe</title>
+
+  <title>AlmostMe – Clon Interactivo</title>
+
   <link rel="stylesheet" href="/static/style.css" />
+  <link rel="icon" href="/static/favicon.ico" />
 </head>
+
 <body>
 
-<div class="app">
+  <div class="app">
 
-  <div class="header">
-    <div>
-      <div class="header-title">AlmostMe</div>
-      <div class="status">● Online</div>
+    <!-- HEADER -->
+    <header class="header">
+      <div class="header-info">
+        <div class="header-title">AlmostMe</div>
+        <div class="status">● Online</div>
+      </div>
+    </header>
+
+    <!-- CHAT CONTAINER -->
+    <div class="chat-container">
+
+      <!-- CHAT SCROLLEABLE -->
+      <main id="chat" class="chat"></main>
+
+      <!-- AVATAR FUERA DEL SCROLL -->
+      <div id="chatAvatar" class="chat-avatar">
+        <video
+          id="avatarVideo"
+          class="avatar-video"
+          src="/static/avatar.mp4"
+          playsinline
+          preload="auto">
+        </video>
+      </div>
+
     </div>
-  </div>
 
-  <!-- CONTENEDOR GENERAL -->
-  <div class="chat-container">
-
-    <!-- CHAT SCROLLEABLE -->
-    <div id="chat" class="chat"></div>
-
-    <!-- AVATAR FIJO -->
-    <div id="avatar" class="chat-avatar">
-      <video 
-        id="avatarVideo"
-        class="avatar-video"
-        src="/static/avatar.mp4"
-        preload="auto"
-      ></video>
-    </div>
+    <!-- INPUT -->
+    <form id="form" class="input-area">
+      <input
+        id="input"
+        type="text"
+        placeholder="Escribí tu mensaje..."
+        autocomplete="off"
+        required
+      />
+      <button type="submit">➤</button>
+    </form>
 
   </div>
 
-  <!-- INPUT -->
-  <div class="input-area">
-    <input id="messageInput" type="text" placeholder="Escribí tu mensaje..." />
-    <button id="sendBtn">➤</button>
-  </div>
+  <script src="/static/script.js"></script>
 
-</div>
-
-<script src="/static/script.js"></script>
 </body>
 </html>
