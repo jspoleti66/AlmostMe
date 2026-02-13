@@ -2,12 +2,26 @@ const chat = document.getElementById("chat");
 const form = document.getElementById("form");
 const input = document.getElementById("input");
 const avatar = document.getElementById("chatAvatar");
+const video = document.getElementById("avatarVideo");
+
+/* ===== VIDEO CONTROL ===== */
+
+function playVideoOnce(){
+  video.currentTime = 0;
+  video.play();
+}
+
+function stopVideo(){
+  video.pause();
+  video.currentTime = 0;
+}
 
 /* ===== AVATAR STATES ===== */
 
 function startThinking(){
   avatar.classList.add("floating","thinking");
   avatar.classList.remove("speaking");
+  playVideoOnce();
 }
 
 function startSpeaking(){
@@ -17,6 +31,7 @@ function startSpeaking(){
 
 function stopAvatar(){
   avatar.classList.remove("floating","thinking","speaking");
+  stopVideo();
 }
 
 /* ===== CHAT ===== */
