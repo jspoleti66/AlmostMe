@@ -4,46 +4,95 @@ const input = document.getElementById("input");
 const avatar = document.getElementById("chatAvatar");
 const video = document.getElementById("avatarVideo");
 
-function addMessage(text, sender){
-  const msg = document.createElement("div");
-  msg.classList.add("msg", sender);
-  msg.innerText = text;
-  chat.appendChild(msg);
-  chat.scrollTop = chat.scrollHeight;
+/* ===== CONFIG ===== */
+const WORDS_PER_SECOND = 2.7;
+
+/* ===== VIDEO CONTROL ===== */
+
+function playVideo(){
+  video.currentTime = 0;
+  video.play();
 }
 
-function speak(text){
+function stopVideo(){
+  video.pause();
+  video.currentTime = 0;
+}
 
+/* ===== AVATAR STATES ===== */
+
+function startThinking(){
+  avatar.classList.add("floating","thinking");
+  avatar.classList.remove("speaking");
+}
+
+function startSpeaking(){
+  avatar.classList.remove("thinking");
   avatar.classList.add("speaking");
-
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = "es-AR";
-
-  utterance.onstart = () => {
-    video.currentTime = 0;
-    video.play();
-  };
-
-  utterance.onend = () => {
-    video.pause();
-    avatar.classList.remove("speaking");
-  };
-
-  speechSynthesis.speak(utterance);
+  playVideo();
 }
 
-form.addEventListener("submit", (e)=>{
+function stopAvatar(){
+  avatar.classList.remove("floating","thinking","speaking");
+  stopVideo();
+}
+
+/* ===== CHAT ===== */
+
+function addMessage(text,type){
+  const div=document.createElement("div");
+  div.className=`msg ${type}`;
+  div.innerHTML=(text || "…").replace(/\n/g,"<br>");
+  chat.appendChild(div);
+  chat.scrollTop=chat.scrollHeight;
+}
+
+/* ===== DURACIÓN REALISTA ===== */
+
+function calculateSpeechDuration(text){
+  const words = text.trim().split(/\s+/).length;
+  const seconds = words / WORDS_PER_SECOND;
+  return seconds * 1000;
+}
+
+/* ===== FORM ===== */
+
+form.addEventListener("submit",async(e)=>{
   e.preventDefault();
 
-  const text = input.value.trim();
+  const text=input.value.trim();
   if(!text) return;
 
   addMessage(text,"user");
-  input.value = "";
+  input.value="";
 
-  setTimeout(()=>{
-    const reply = "Dijiste: " + text;
+  startThinking();
+
+  try{
+    const res=await fetch("/chat",{
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body:JSON.stringify({ message:text })
+    });
+
+    if(!res.ok) throw new Error("HTTP error");
+
+    const data=await res.json();
+    const reply = data.content || data.response || "Sin respuesta";
+
     addMessage(reply,"bot");
-    speak(reply);
-  }, 400);
+
+    startSpeaking();
+
+    const duration = calculateSpeechDuration(reply);
+
+    setTimeout(() => {
+      stopAvatar();
+    }, duration);
+
+  }catch(err){
+    console.error(err);
+    stopAvatar();
+    addMessage("No pude conectar con el servidor","bot");
+  }
 });
