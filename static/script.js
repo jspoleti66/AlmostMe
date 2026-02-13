@@ -1,98 +1,48 @@
 const chat = document.getElementById("chat");
-const form = document.getElementById("form");
-const input = document.getElementById("input");
-const avatar = document.getElementById("chatAvatar");
+const input = document.getElementById("messageInput");
+const button = document.getElementById("sendBtn");
+const avatar = document.getElementById("avatar");
 const video = document.getElementById("avatarVideo");
 
-/* ===== CONFIG ===== */
-const WORDS_PER_SECOND = 2.7;
+function addMessage(text, sender){
+  const msg = document.createElement("div");
+  msg.classList.add("msg", sender);
+  msg.innerText = text;
+  chat.appendChild(msg);
 
-/* ===== VIDEO CONTROL ===== */
+  chat.scrollTop = chat.scrollHeight;
+}
 
-function playVideo(){
+function simulateSpeaking(text){
+
+  const duration = Math.max(text.length * 40, 1200);
+
+  avatar.classList.add("speaking","floating");
+
   video.currentTime = 0;
   video.play();
+
+  setTimeout(()=>{
+    video.pause();
+    avatar.classList.remove("speaking","floating");
+  }, duration);
 }
 
-function stopVideo(){
-  video.pause();
-  video.currentTime = 0;
-}
+button.addEventListener("click", sendMessage);
+input.addEventListener("keypress", e=>{
+  if(e.key==="Enter") sendMessage();
+});
 
-/* ===== AVATAR STATES ===== */
-
-function startThinking(){
-  avatar.classList.add("floating","thinking");
-  avatar.classList.remove("speaking");
-}
-
-function startSpeaking(){
-  avatar.classList.remove("thinking");
-  avatar.classList.add("speaking");
-  playVideo();
-}
-
-function stopAvatar(){
-  avatar.classList.remove("floating","thinking","speaking");
-  stopVideo();
-}
-
-/* ===== CHAT ===== */
-
-function addMessage(text,type){
-  const div=document.createElement("div");
-  div.className=`msg ${type}`;
-  div.innerHTML=(text || "…").replace(/\n/g,"<br>");
-  chat.appendChild(div);
-  chat.scrollTop=chat.scrollHeight;
-}
-
-/* ===== DURACIÓN REALISTA ===== */
-
-function calculateSpeechDuration(text){
-  const words = text.trim().split(/\s+/).length;
-  const seconds = words / WORDS_PER_SECOND;
-  return seconds * 1000;
-}
-
-/* ===== FORM ===== */
-
-form.addEventListener("submit",async(e)=>{
-  e.preventDefault();
-
-  const text=input.value.trim();
+function sendMessage(){
+  const text = input.value.trim();
   if(!text) return;
 
   addMessage(text,"user");
   input.value="";
 
-  startThinking();
-
-  try{
-    const res=await fetch("/chat",{
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body:JSON.stringify({ message:text })
-    });
-
-    if(!res.ok) throw new Error("HTTP error");
-
-    const data=await res.json();
-    const reply = data.content || data.response || "Sin respuesta";
-
+  setTimeout(()=>{
+    const reply = "Estoy bien, gracias.";
     addMessage(reply,"bot");
-
-    startSpeaking();
-
-    const duration = calculateSpeechDuration(reply);
-
-    setTimeout(() => {
-      stopAvatar();
-    }, duration);
-
-  }catch(err){
-    console.error(err);
-    stopAvatar();
-    addMessage("No pude conectar con el servidor","bot");
-  }
-});
+    simulateSpeaking(reply);
+  }, 500);
+}
