@@ -1,7 +1,7 @@
 const chat = document.getElementById("chat");
-const input = document.getElementById("messageInput");
-const button = document.getElementById("sendBtn");
-const avatar = document.getElementById("avatar");
+const form = document.getElementById("form");
+const input = document.getElementById("input");
+const avatar = document.getElementById("chatAvatar");
 const video = document.getElementById("avatarVideo");
 
 function addMessage(text, sender){
@@ -9,40 +9,41 @@ function addMessage(text, sender){
   msg.classList.add("msg", sender);
   msg.innerText = text;
   chat.appendChild(msg);
-
   chat.scrollTop = chat.scrollHeight;
 }
 
-function simulateSpeaking(text){
+function speak(text){
 
-  const duration = Math.max(text.length * 40, 1200);
+  avatar.classList.add("speaking");
 
-  avatar.classList.add("speaking","floating");
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = "es-AR";
 
-  video.currentTime = 0;
-  video.play();
+  utterance.onstart = () => {
+    video.currentTime = 0;
+    video.play();
+  };
 
-  setTimeout(()=>{
+  utterance.onend = () => {
     video.pause();
-    avatar.classList.remove("speaking","floating");
-  }, duration);
+    avatar.classList.remove("speaking");
+  };
+
+  speechSynthesis.speak(utterance);
 }
 
-button.addEventListener("click", sendMessage);
-input.addEventListener("keypress", e=>{
-  if(e.key==="Enter") sendMessage();
-});
+form.addEventListener("submit", (e)=>{
+  e.preventDefault();
 
-function sendMessage(){
   const text = input.value.trim();
   if(!text) return;
 
   addMessage(text,"user");
-  input.value="";
+  input.value = "";
 
   setTimeout(()=>{
-    const reply = "Estoy bien, gracias.";
+    const reply = "Dijiste: " + text;
     addMessage(reply,"bot");
-    simulateSpeaking(reply);
-  }, 500);
-}
+    speak(reply);
+  }, 400);
+});
