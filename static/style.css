@@ -1,10 +1,3 @@
-/* ===== GLOBAL FIX ===== */
-html, body{
-  margin:0;
-  padding:0;
-  overflow-x:hidden;
-}
-
 /* ===== RESET ===== */
 *{
   box-sizing:border-box;
@@ -56,38 +49,26 @@ body{
   color:#22c55e;
 }
 
-/* ===== CHAT CONTAINER ===== */
-.chat-container{
-  flex:1;
-  position:relative;
-  display:flex;
-}
-
 /* ===== CHAT ===== */
 .chat{
   flex:1;
-  padding:16px 12px 120px 12px; /* espacio inferior */
+  padding:16px 12px;
   display:flex;
   flex-direction:column;
   gap:12px;
   overflow-y:auto;
-  overflow-x:hidden;
+  position:relative;
 }
 
-/* 🔥 Mantiene mensajes abajo cuando hay pocos */
-.chat::before{
-  content:"";
-  flex:1;
-}
-
-/* ===== AVATAR FIJO (NO STICKY) ===== */
+/* ===== CHAT AVATAR ===== */
 .chat-avatar{
-  position:absolute;
-  top:16px;
-  right:12px;
+  position:sticky;
+  top:12px;
+  margin-left:auto;
+  margin-right:6px;
   width:110px;
   height:110px;
-  z-index:20;
+  z-index:10;
   pointer-events:none;
 }
 
@@ -95,7 +76,6 @@ body{
 .avatar-video{
   width:100%;
   height:100%;
-  display:block;
   border-radius:50%;
   object-fit:cover;
   border:3px solid #2563eb;
@@ -105,10 +85,15 @@ body{
     0 12px 28px rgba(0,0,0,.55),
     0 0 0 1px rgba(37,99,235,.35);
 
-  transition:box-shadow .3s ease;
+  transition:
+    transform .6s ease,
+    box-shadow .6s ease;
 }
 
-/* ❌ Eliminado movimiento vertical */
+/* ===== FLOAT ACTIVE (NO LOOP) ===== */
+.chat-avatar.floating .avatar-video{
+  transform:translateY(-6px);
+}
 
 /* ===== STATES ===== */
 .chat-avatar.speaking::after{
@@ -133,7 +118,6 @@ body{
   border-radius:16px;
   font-size:14px;
   line-height:1.5;
-  word-wrap:break-word;
 }
 
 .user{
