@@ -1,11 +1,10 @@
-/* ===== GLOBAL FIX ===== */
-html, body {
+/* ===== GLOBAL ===== */
+html, body{
   margin:0;
   padding:0;
   overflow-x:hidden;
 }
 
-/* ===== RESET ===== */
 *{
   box-sizing:border-box;
   margin:0;
@@ -56,54 +55,56 @@ body{
   color:#22c55e;
 }
 
+/* ===== CHAT CONTAINER ===== */
+.chat-container{
+  flex:1;
+  position:relative;
+  display:flex;
+}
+
 /* ===== CHAT ===== */
 .chat{
   flex:1;
-  padding:16px 12px;
+  padding:16px 12px 120px 12px;
   display:flex;
   flex-direction:column;
   gap:12px;
   overflow-y:auto;
-  overflow-x:hidden; /* 🔥 clave */
-  position:relative;
+  overflow-x:hidden;
+  justify-content:flex-end;
 }
 
-/* ===== CHAT AVATAR ===== */
+/* ===== AVATAR ===== */
 .chat-avatar{
-  position:absolute;   /* 🔥 CAMBIO IMPORTANTE */
+  position:absolute;
   top:16px;
   right:12px;
   width:110px;
   height:110px;
-  z-index:10;
+  z-index:20;
   pointer-events:none;
 }
 
-/* VIDEO */
 .avatar-video{
   width:100%;
   height:100%;
-  display:block;       /* 🔥 elimina espacio inline */
+  display:block;
   border-radius:50%;
   object-fit:cover;
   border:3px solid #2563eb;
   background:#020617;
-
   box-shadow:
     0 12px 28px rgba(0,0,0,.55),
     0 0 0 1px rgba(37,99,235,.35);
-
-  transition:
-    transform .6s ease,
-    box-shadow .6s ease;
+  transition:transform .6s ease;
 }
 
-/* ===== FLOAT ACTIVE (NO LOOP) ===== */
+/* FLOAT */
 .chat-avatar.floating .avatar-video{
   transform:translateY(-6px);
 }
 
-/* ===== AVATAR STATES ===== */
+/* SPEAKING RING */
 .chat-avatar.speaking::after{
   content:"";
   position:absolute;
@@ -113,10 +114,9 @@ body{
   animation:ringPulse 1.4s ease-out infinite;
 }
 
-.chat-avatar.thinking .avatar-video{
-  box-shadow:
-    0 0 22px rgba(96,165,250,.55),
-    0 0 0 1px rgba(96,165,250,.5);
+@keyframes ringPulse{
+  0%{transform:scale(.9);opacity:.8}
+  100%{transform:scale(1.35);opacity:0}
 }
 
 /* ===== MESSAGES ===== */
@@ -127,7 +127,6 @@ body{
   font-size:14px;
   line-height:1.5;
   word-wrap:break-word;
-  overflow-wrap:break-word;
 }
 
 .user{
@@ -171,10 +170,4 @@ body{
   color:white;
   font-size:16px;
   cursor:pointer;
-}
-
-/* ===== ANIMATION ===== */
-@keyframes ringPulse{
-  0%{transform:scale(.9);opacity:.8}
-  100%{transform:scale(1.35);opacity:0}
 }
