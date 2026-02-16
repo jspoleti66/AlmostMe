@@ -1,211 +1,116 @@
-import os
 import json
-import re
-import traceback
+import os
+from pathlib import Path
 
-from flask import Flask, request, jsonify, render_template, session
-from datetime import timedelta
+BASE_DIR = Path(__file__).resolve().parent
 
-from azure.ai.inference import ChatCompletionsClient
-from azure.ai.inference.models import (
-    SystemMessage,
-    UserMessage,
-    AssistantMessage
-)
-from azure.core.credentials import AzureKeyCredential
 
-# =====================================================
-# APP CONFIG
-# =====================================================
-app = Flask(__name__)
-app.secret_key = os.getenv("SECRET_KEY", "almostme_secret")
-app.permanent_session_lifetime = timedelta(minutes=30)
+# ---------------------------------------------------
+# UTILIDADES
+# ---------------------------------------------------
 
-BASE_PATH = "data/conocimiento"
-CONFIG_PATH = "data/config/context.json"
+def load_text_file(relative_path: str) -> str:
+    file_path = BASE_DIR / relative_path
+    if not file_path.exists():
+        return ""
+    return file_path.read_text(encoding="utf-8").strip()
 
-def load_config():
-    if not os.path.exists(CONFIG_PATH):
-        raise Exception("context.json no encontrado")
-    with open(CONFIG_PATH, encoding="utf-8") as f:
+
+def load_json(relative_path: str):
+    file_path = BASE_DIR / relative_path
+    if not file_path.exists():
+        return {}
+    with open(file_path, "r", encoding="utf-8") as f:
         return json.load(f)
 
-CONFIG = load_config()
 
-# =====================================================
-# LOADERS
-# =====================================================
-def load_txt(path):
-    if not os.path.exists(path): return ""
-    with open(path, encoding="utf-8") as f:
-        return f.read().strip()
+# ---------------------------------------------------
+# CARGA DE CONFIGURACIÓN
+# ---------------------------------------------------
 
-def load_json(path):
-    if not os.path.exists(path): return {}
-    with open(path, encoding="utf-8") as f:
-        return json.load(f)
+context = load_json("context.json")
 
-def load_domains():
-    domains = []
-    for name, cfg in CONFIG["domains"].items():
-        blocks = []
-        for file in cfg["files"]:
-            path = os.path.join(BASE_PATH, file)
-            content = load_txt(path)
-            if content: blocks.append(content)
-        if blocks:
-            domains.append({
-                "name": name.upper(),
-                "priority": cfg["priority"],
-                "content": "\n\n".join(blocks)
-            })
-    domains.sort(key=lambda x: x["priority"], reverse=True)
-    return domains
+SYSTEM_PROMPT_PATH = context.get("system_prompt")
+DOMAINS = context.get("domains", {})
+HISTORY_LIMIT = context.get("history_limit", 6)
 
-DOMAINS = load_domains()
 
-def load_manuals():
-    path = os.path.join(BASE_PATH, CONFIG["manuales"]["path"])
-    if not os.path.exists(path): return []
-    data = load_json(path)
-    return data.get("items", [])
+# ---------------------------------------------------
+# CONSTRUCCIÓN DE HECHOS AUTORIZADOS
+# ---------------------------------------------------
 
-MANUALES = load_manuals()
-SYSTEM_PROMPT = load_txt(CONFIG["system_prompt"])
+def build_facts_block() -> str:
+    """
+    Construye el bloque único de hechos autorizados
+    combinando todos los dominios definidos en context.json.
+    No hay hardcode.
+    """
 
-# =====================================================
-# UTILS & LOGIC
-# =====================================================
-def normalize(text):
-    text = text.lower()
-    text = re.sub(r"[^\w\sáéíóúñ]", "", text)
-    return text
+    domain_items = sorted(
+        DOMAINS.items(),
+        key=lambda x: x[1].get("priority", 0),
+        reverse=True
+    )
 
-def build_context(message):
-    best = find_best_domain(message)
-    blocks = [best] if best else []
-    for d in DOMAINS:
-        if d not in blocks: blocks.append(d)
-    
-    context_text = ""
-    for d in blocks[:3]:
-        context_text += f"\nDOMINIO {d['name']}:\n{d['content']}\n"
+    collected_texts = []
 
-    return f"{SYSTEM_PROMPT}\n\nCONOCIMIENTO AUTORIZADO:\n{context_text}"
+    for domain_name, domain_data in domain_items:
+        files = domain_data.get("files", [])
 
-def find_best_domain(message):
-    scores = []
-    norm_msg = normalize(message)
-    for d in DOMAINS:
-        t = set(norm_msg.split())
-        dc = set(normalize(d["content"]).split())
-        score = len(t & dc)
-        scores.append((score, d))
-    scores.sort(reverse=True, key=lambda x: x[0])
-    return scores[0][1] if scores and scores[0][0] > 1 else None
+        for file_name in files:
+            file_path = f"data/{file_name}"
+            content = load_text_file(file_path)
 
-def find_manual(message):
-    text = normalize(message)
-    for manual in MANUALES:
-        ids = [i.strip().lower() for i in manual.get("id", "").split(",")]
-        for key in ids:
-            if not key: continue
-            # Fix: Captura palabra exacta o plural simple (ej: auto o autos)
-            pattern = rf"\b{key}s?\b"
-            if re.search(pattern, text):
-                return manual
-    return None
+            if content:
+                collected_texts.append(content)
 
-def list_manual_titles():
-    return [m["title"] for m in MANUALES if "title" in m]
+    return "\n\n".join(collected_texts).strip()
 
-def mentions_manual_intent(text):
-    t = normalize(text)
-    # Fix: Captura manual, guia, lista, listado
-    return bool(re.search(r"(manual|guia|lista|instruc|docu)", t))
 
-# =====================================================
-# MODEL
-# =====================================================
-def query_model(history, message):
-    token = os.getenv("GITHUB_TOKEN")
-    if not token: return "Error: Token no configurado."
-    try:
-        client = ChatCompletionsClient(
-            endpoint="https://models.inference.ai.azure.com",
-            credential=AzureKeyCredential(token),
-        )
-        messages = [SystemMessage(content=build_context(message))]
-        for msg in history:
-            role = UserMessage if msg["role"] == "user" else AssistantMessage
-            messages.append(role(content=msg["content"]))
-        messages.append(UserMessage(content=message))
+# ---------------------------------------------------
+# CONSTRUCCIÓN DEL PROMPT FINAL
+# ---------------------------------------------------
 
-        response = client.complete(
-            model="Meta-Llama-3.1-8B-Instruct",
-            messages=messages,
-            temperature=0.1,
-            max_tokens=400
-        )
-        return response.choices[0].message.content.strip()
-    except Exception:
-        return "Lo siento, no puedo responder en este momento."
+def build_prompt(user_message: str, conversation_history: list) -> list:
+    """
+    Devuelve lista de mensajes estilo OpenAI:
+    [
+        {"role": "system", "content": "..."},
+        {"role": "user", "content": "..."}
+    ]
+    """
 
-# =====================================================
-# ROUTES
-# =====================================================
-@app.route("/")
-def index():
-    session.permanent = True
-    session.setdefault("history", [])
-    return render_template("index.html")
+    system_text = load_text_file(SYSTEM_PROMPT_PATH)
+    personality_text = load_text_file("data/personalidad.txt")
+    facts_block = build_facts_block()
 
-@app.route("/chat", methods=["POST"])
-def chat():
-    try:
-        data = request.get_json(silent=True) or {}
-        message = data.get("message", "").strip()
-        if not message: return jsonify({"type": "text", "content": "Decime."})
+    unified_system_prompt = f"""
+{system_text}
 
-        history = session.get("history", [])
-        norm = normalize(message)
+────────────────────────────────────────
+HECHOS_AUTORIZADOS
+────────────────────────────────────────
 
-        # 1. Filtro Meta-información
-        meta_triggers = ["que informacion guard", "que sabes de mi", "tus archivos"]
-        if any(t in norm for t in meta_triggers):
-            return jsonify({"type": "text", "content": "Solo accedo a manuales y conocimiento técnico autorizado."})
+{facts_block if facts_block else "No hay hechos autorizados definidos."}
 
-        # 2. Lógica de Manuales (Prioridad Máxima)
-        # Primero: ¿Busca uno específico? (ej: "el del auto", "manual piscina")
-        manual_especifico = find_manual(message)
-        if manual_especifico:
-            return jsonify({
-                "type": "vcard", 
-                "content": f"<b>{manual_especifico['title']}</b><br>{manual_especifico['summary']}<br><a href='{manual_especifico['url']}' target='_blank'>Ver Manual</a>"
-            })
+────────────────────────────────────────
+PERSONALIDAD
+────────────────────────────────────────
 
-        # Segundo: ¿Pide la lista o dijo "si" a una oferta?
-        if mentions_manual_intent(message) or norm in ["si", "cuales", "que mas"]:
-            titulos = list_manual_titles()
-            if titulos:
-                return jsonify({
-                    "type": "text", 
-                    "content": "Los únicos manuales que tengo disponibles son:\n• " + "\n• ".join(titulos)
-                })
+{personality_text}
 
-        # 3. Consulta al LLM (Para preguntas de mantenimiento o charla general)
-        answer = query_model(history, message)
-        
-        history.append({"role": "user", "content": message})
-        history.append({"role": "assistant", "content": answer})
-        session["history"] = history[-10:]
+Fin del contexto.
+""".strip()
 
-        return jsonify({"type": "text", "content": answer})
+    messages = [
+        {"role": "system", "content": unified_system_prompt}
+    ]
 
-    except Exception:
-        print(traceback.format_exc())
-        return jsonify({"type": "text", "content": "Hubo un error de conexión."}), 500
+    # Historial limitado solo para coherencia
+    if conversation_history:
+        for msg in conversation_history[-HISTORY_LIMIT:]:
+            messages.append(msg)
 
-if __name__ == "__main__":
-    app.run(debug=True)
+    messages.append({"role": "user", "content": user_message})
 
+    return messages
