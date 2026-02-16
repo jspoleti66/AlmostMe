@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
   <title>AlmostMe – Clon Interactivo</title>
 
   <link rel="stylesheet" href="/static/style.css" />
@@ -14,19 +13,9 @@
 
   <div class="app">
 
-    <!-- HEADER -->
-    <header class="header">
-      <div class="header-info">
-        <div class="header-title">AlmostMe</div>
-        <div class="status">● Online</div>
-      </div>
-    </header>
-
-    <!-- MAIN LAYOUT -->
-    <div class="main-layout">
-
-      <!-- AVATAR LATERAL -->
-      <div id="chatAvatar" class="chat-avatar">
+    <!-- SIDEBAR AVATAR -->
+    <aside class="sidebar">
+      <div class="avatar-wrapper">
         <video
           id="avatarVideo"
           class="avatar-video"
@@ -35,25 +24,27 @@
           playsinline>
         </video>
       </div>
+      <div class="avatar-name">AlmostMe</div>
+      <div class="avatar-status">● Online</div>
+    </aside>
 
-      <!-- CHAT AREA -->
-      <main id="chat" class="chat">
-        <div id="messages" class="messages"></div>
-      </main>
+    <!-- CHAT AREA -->
+    <div class="chat-container">
+
+      <div id="messages" class="messages"></div>
+
+      <form id="form" class="input-wrapper">
+        <input
+          id="input"
+          type="text"
+          placeholder="Escribí tu mensaje..."
+          autocomplete="off"
+          required
+        />
+        <button type="submit">➤</button>
+      </form>
 
     </div>
-
-    <!-- INPUT -->
-    <form id="form" class="input-area">
-      <input
-        id="input"
-        type="text"
-        placeholder="Escribí tu mensaje..."
-        autocomplete="off"
-        required
-      />
-      <button type="submit">➤</button>
-    </form>
 
   </div>
 
