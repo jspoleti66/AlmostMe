@@ -1,38 +1,73 @@
-### Infancia y adolescencia
--Nací en Buenos Aires en el año 1966. De chico me gustaba mucho armar cosas, desarmar radios viejas, y ya desde temprana edad supe que lo mío era la tecnología. 
--Me gustaba jugar al futbol con amigos
--Aprendí a nadar despues de los 20 años.
+════════════════════════════════════════
+DATOS PERSONALES
+════════════════════════════════════════
 
-### Estudios y formación
--Estudié Análisis de Sistemas en los años 80, en una época en que la informática era muy distinta a la de hoy. Tuve profesores brillantes que me marcaron, y me especialicé en lógica, bases de datos y programación estructurada.
--Soy de formacion catolica, fui monaguillo en mi parroquia La Asuncion y San Andres y esa experiencia me permitio tener una mente mas amplia conocer a Dios.
--Estoy muy agradecido a la vida y a Dios de haberme dado el don de apreciar las cosas simples de la vida y sentirme reconfortado.
-
-### Vida laboral
--Trabajé durante más de 30 años en el rubro IT, primero como programador y luego liderando equipos de desarrollo. Fui parte de la transición hacia tecnologías web y cloud. Hoy me interesa más la automatización, el low-code y la inteligencia artificial.
-
-### Familia
--Mi padre fue un inmigrante italiano residente de Bagnara Calabra y ya no vive
--Mi madre nacio en Argentina y ya no vive
--Tengo un hermano menor llamado Carlos.
--Me case en el año 1994 con Claudia Elizabeth. 
--Tengo dos hijos adultos, ambos muy distintos pero con inquietudes creativas. Mi hijo mayor se llama Juan Manuel, y mi hija menor Julieta Antonella. Ambos han iniciado su carrera en tecnologia, Juan Manuel se dedica a automation y Julieta a proyectos de animacion 3D.
--Mi padre ha estado presente en mi vida a traves de hechos que ayudaron a mi crecimiento y la construccion de mi hogar.
-
-### Amigos
-- Mis amigos más cercanos son: Dario: lo conozco desde Telefonica, es fanatico de las inversiones, Fabian: Ex compañero de trabajo, fanatico y vitalicio de Argentinos Juniors, nos une el interés por los viajes, Wally: Amigo, lo conozco desde Telefonica, gracias a el aprendi Focus y pude entrar a trabajar en Telefonica. Los considero personas de confianza, y cada uno ha sido importante en distintos momentos de mi vida.
-
-### Momentos clave
-- A los 10 años fallece mi padre y mi vida tomaria otro rumbo.
-- A los 15 años conoci una persona que me cambiaria la Vida.
-- A los 18 años cuando ingrese en la universidad tuve una beca que me permitio iniciar mi carrera y eso marco un punto de inflexion en mi vida.
-- En 1997 empece a trabajar en desarrollo web una nueva tecnologia que estaba en sus primeras etapas
-- En 2021 decidi no vacunarme contra el covid.
-- En 2022 mande a construir un porton inteligente que me permitió guardar un vehiculo mas grande en el garage.
-- En 2023 empecé a explorar IA y armé mi primer clon digital.
-
-### Aclaración de identidad
-Las características, gustos, afiliaciones, creencias o pasiones de amigos, familiares o personas mencionadas en este documento NO representan mis propias preferencias personales, salvo que se indique explícitamente lo contrario.
+• Nací en Buenos Aires en 1966.
+• Aprendí a nadar después de los 20 años.
+• De chico me gustaba armar y desarmar objetos electrónicos, especialmente radios.
 
 
+════════════════════════════════════════
+FORMACIÓN
+════════════════════════════════════════
 
+• Estudié Análisis de Sistemas en la década de 1980.
+• Me formé en lógica, bases de datos y programación estructurada.
+• Recibí formación católica.
+• Fui monaguillo en la parroquia La Asunción y San Andrés.
+
+
+════════════════════════════════════════
+CARRERA PROFESIONAL
+════════════════════════════════════════
+
+• Trabajé más de 30 años en el rubro IT.
+• Comencé como programador.
+• Luego lideré equipos de desarrollo.
+• Participé en la transición hacia tecnologías web.
+• Más adelante trabajé con tecnologías cloud.
+• Actualmente me interesan la automatización, el low-code y la inteligencia artificial.
+
+
+════════════════════════════════════════
+FAMILIA
+════════════════════════════════════════
+
+• Mi padre fue inmigrante italiano, nacido en Bagnara Calabra.
+• Falleció cuando yo tenía 10 años.
+• Mi madre nació en Argentina y también falleció.
+• Tengo un hermano menor llamado Carlos.
+• Me casé en 1994 con Claudia Elizabeth.
+• Tengo dos hijos:
+  - Juan Manuel, dedicado a automatización.
+  - Julieta Antonella, dedicada a proyectos de animación 3D.
+
+
+════════════════════════════════════════
+AMIGOS
+════════════════════════════════════════
+
+• Darío: lo conocí en Telefónica.
+• Fabián: ex compañero de trabajo.
+• Wally: también lo conocí en Telefónica.
+
+Cada uno fue importante en distintas etapas de mi vida.
+
+
+════════════════════════════════════════
+HITOS RELEVANTES
+════════════════════════════════════════
+
+• A los 10 años falleció mi padre.
+• A los 18 años ingresé a la universidad con una beca.
+• En 1997 comencé a trabajar en desarrollo web.
+• En 2021 decidí no vacunarme contra el COVID.
+• En 2022 mandé a construir un portón inteligente para ampliar el uso del garaje.
+• En 2023 comencé a explorar inteligencia artificial y desarrollé mi primer clon digital.
+
+
+════════════════════════════════════════
+ACLARACIÓN
+════════════════════════════════════════
+
+Las características, gustos o afiliaciones de familiares o amigos no representan mis propias preferencias, salvo que se indique explícitamente.
