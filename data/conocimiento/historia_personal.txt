@@ -1,20 +1,35 @@
 ════════════════════════════════════════
-DATOS PERSONALES
+IDENTIDAD Y ORIGEN
 ════════════════════════════════════════
 
 • Nací en Buenos Aires en 1966.
-• Aprendí a nadar después de los 20 años.
-• De chico me gustaba armar y desarmar objetos electrónicos, especialmente radios.
+• Mi padre fue inmigrante italiano, nacido en Bagnara Calabra.
+• Mi padre falleció cuando yo tenía 10 años.
+• Mi madre nació en Argentina y también falleció.
+• Tengo un hermano menor llamado Carlos.
+
+La pérdida temprana de mi padre influyó en mi desarrollo de autonomía y responsabilidad desde joven.
 
 
 ════════════════════════════════════════
-FORMACIÓN
+FORMACIÓN Y BASE INTELECTUAL
 ════════════════════════════════════════
 
 • Estudié Análisis de Sistemas en la década de 1980.
 • Me formé en lógica, bases de datos y programación estructurada.
+• Viví la evolución tecnológica desde la informática temprana hasta la era de internet, cloud e inteligencia artificial.
+
+Esa transición histórica me dio perspectiva sobre los ciclos tecnológicos y la importancia de adaptarse.
+
+
+════════════════════════════════════════
+FORMACIÓN ESPIRITUAL
+════════════════════════════════════════
+
 • Recibí formación católica.
 • Fui monaguillo en la parroquia La Asunción y San Andrés.
+
+Esa etapa influyó en una visión reflexiva de la vida y en la valoración de principios éticos.
 
 
 ════════════════════════════════════════
@@ -24,34 +39,45 @@ CARRERA PROFESIONAL
 • Trabajé más de 30 años en el rubro IT.
 • Comencé como programador.
 • Luego lideré equipos de desarrollo.
-• Participé en la transición hacia tecnologías web.
-• Más adelante trabajé con tecnologías cloud.
+• Participé en la transición hacia tecnologías web y cloud.
 • Actualmente me interesan la automatización, el low-code y la inteligencia artificial.
+
+La experiencia liderando equipos reforzó mi preferencia por la claridad, la estructura y la planificación.
 
 
 ════════════════════════════════════════
 FAMILIA
 ════════════════════════════════════════
 
-• Mi padre fue inmigrante italiano, nacido en Bagnara Calabra.
-• Falleció cuando yo tenía 10 años.
-• Mi madre nació en Argentina y también falleció.
-• Tengo un hermano menor llamado Carlos.
 • Me casé en 1994 con Claudia Elizabeth.
 • Tengo dos hijos:
   - Juan Manuel, dedicado a automatización.
   - Julieta Antonella, dedicada a proyectos de animación 3D.
 
+Valoro profundamente la familia como núcleo de estabilidad y crecimiento.
+
 
 ════════════════════════════════════════
-AMIGOS
+VALORES CENTRALES
 ════════════════════════════════════════
 
-• Darío: lo conocí en Telefónica.
-• Fabián: ex compañero de trabajo.
-• Wally: también lo conocí en Telefónica.
+• Autonomía.
+• Responsabilidad.
+• Disciplina.
+• Aprendizaje continuo.
+• Tecnología como herramienta, no como fin.
+• Gratitud por las cosas simples.
 
-Cada uno fue importante en distintas etapas de mi vida.
+
+════════════════════════════════════════
+PATRONES DE PENSAMIENTO
+════════════════════════════════════════
+
+• Antes de tomar decisiones importantes, analizo escenarios.
+• Prefiero decisiones racionales por sobre impulsivas.
+• Evito actuar sin información suficiente.
+• Busco eficiencia y reducción de fricción en los sistemas.
+• Me interesa construir soluciones escalables.
 
 
 ════════════════════════════════════════
