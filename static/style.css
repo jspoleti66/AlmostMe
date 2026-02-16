@@ -1,197 +1,116 @@
-/* =========================
-   RESET
-========================= */
-
+/* Reset */
 * {
   box-sizing: border-box;
-}
-
-body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  background: #0f172a;
+  padding: 0;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Layout general */
+body {
+  background: linear-gradient(135deg, #0f172a, #1e293b);
+  height: 100vh;
+  display: flex;
+  overflow: hidden;
   color: white;
-  overflow-x: hidden; /* 🔥 elimina barra horizontal */
 }
 
-/* =========================
-   LAYOUT
-========================= */
-
-.container {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 20px 20px 120px 20px;
+/* Avatar lateral */
+#avatar-container {
+  width: 280px;
+  background: #0b1220;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-right: 1px solid #1f2a44;
 }
 
-#chat {
+#avatar {
+  width: 180px;
+  border-radius: 50%;
+  transition: transform 0.2s ease;
+}
+
+/* Chat container */
+#chat-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+/* Área de mensajes */
+#messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  padding-bottom: 120px; /* 🔥 espacio para que no lo tape el input */
   display: flex;
   flex-direction: column;
   gap: 14px;
-  margin-bottom: 20px;
-  word-wrap: break-word;
-  overflow-wrap: break-word;
 }
 
-/* =========================
-   MENSAJES
-========================= */
-
-.msg {
-  max-width: 75%;
+/* Burbuja clon */
+.bot-message {
+  align-self: flex-start;
+  background: #1f2a44;
   padding: 14px 18px;
   border-radius: 18px;
+  max-width: 70%;
   line-height: 1.5;
-  font-size: 15px;
-  animation: fadeIn 0.25s ease-out;
-  word-break: break-word;
 }
 
-.msg.user {
+/* Burbuja usuario */
+.user-message {
   align-self: flex-end;
   background: #2563eb;
-  border-bottom-right-radius: 6px;
+  padding: 14px 18px;
+  border-radius: 18px;
+  max-width: 70%;
+  line-height: 1.5;
 }
 
-.msg.bot {
-  align-self: flex-start;
-  background: #1e293b;
-  border-bottom-left-radius: 6px;
-}
-
-/* =========================
-   FORM
-========================= */
-
-#form {
+/* Input fijo abajo */
+#input-container {
   position: fixed;
   bottom: 0;
-  width: 100%;
-  max-width: 900px;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 280px; /* mismo ancho que avatar */
+  right: 0;
+  height: 80px;
+  background: #0b1220;
   display: flex;
-  gap: 10px;
-  padding: 15px 20px;
-  background: #0f172a;
-  border-top: 1px solid #1e293b;
+  align-items: center;
+  padding: 0 20px;
+  border-top: 1px solid #1f2a44;
 }
 
-#input {
+/* Input */
+#user-input {
   flex: 1;
-  padding: 12px 16px;
-  border-radius: 30px;
+  height: 44px;
+  border-radius: 22px;
   border: none;
-  outline: none;
-  background: #1e293b;
+  padding: 0 16px;
+  background: #1f2a44;
   color: white;
+  outline: none;
   font-size: 15px;
 }
 
-#input::placeholder {
-  color: #94a3b8;
-}
-
-button {
-  padding: 12px 20px;
-  border-radius: 30px;
+/* Botón */
+#send-button {
+  margin-left: 12px;
+  height: 44px;
+  width: 44px;
+  border-radius: 50%;
   border: none;
   background: #2563eb;
   color: white;
-  font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s ease;
+  font-size: 18px;
+  transition: 0.2s;
 }
 
-button:hover {
+#send-button:hover {
   background: #1d4ed8;
-}
-
-/* =========================
-   AVATAR CIRCULAR
-========================= */
-
-#chatAvatar {
-  position: fixed;
-  bottom: 110px;
-  right: 25px;
-  width: 140px;
-  height: 140px;
-  border-radius: 50%;
-  overflow: hidden;
-  z-index: 999;
-
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-/* Evita que genere overflow */
-#chatAvatar video {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-/* =========================
-   ESTADOS DEL AVATAR
-========================= */
-
-#chatAvatar.speaking {
-  transform: scale(1.05);
-  box-shadow: 0 20px 50px rgba(37, 99, 235, 0.6);
-}
-
-#chatAvatar.thinking {
-  animation: pulse 1.4s infinite ease-in-out;
-}
-
-/* =========================
-   ANIMACIONES
-========================= */
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(5px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes pulse {
-  0% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.04);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
-/* =========================
-   RESPONSIVE
-========================= */
-
-@media (max-width: 768px) {
-
-  .msg {
-    max-width: 85%;
-    font-size: 14px;
-  }
-
-  #chatAvatar {
-    width: 100px;
-    height: 100px;
-    right: 15px;
-    bottom: 100px;
-  }
-
-  #form {
-    padding: 12px;
-  }
 }
