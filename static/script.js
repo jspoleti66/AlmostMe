@@ -5,15 +5,14 @@ const avatar = document.getElementById("chatAvatar");
 const video = document.getElementById("avatarVideo");
 
 /* ===== CONFIG ===== */
-const WORDS_PER_SECOND = 2.6;
-const BASE_DELAY = 1000 / WORDS_PER_SECOND;
-const SPEECH_LEAD_TIME = 300;
+const MIN_SPEAK_TIME = 1200; // tiempo mínimo que el avatar habla aunque la respuesta sea instantánea
+const THINKING_DELAY = 300;  // pequeño delay antes de mostrar texto
 
 /* ===== VIDEO CONTROL ===== */
 
 function playVideo() {
   video.currentTime = 0;
-  video.play();
+  video.play().catch(() => {});
 }
 
 function stopVideo() {
@@ -23,20 +22,14 @@ function stopVideo() {
 
 /* ===== AVATAR STATES ===== */
 
-function startThinking() {
-  avatar.classList.add("floating", "thinking");
-  avatar.classList.remove("speaking", "idle");
-}
-
 function startSpeaking() {
-  avatar.classList.remove("thinking");
   avatar.classList.add("speaking");
+  avatar.classList.remove("thinking");
   playVideo();
 }
 
-function setIdle() {
-  avatar.classList.remove("thinking", "speaking");
-  avatar.classList.add("idle");
+function stopSpeaking() {
+  avatar.classList.remove("speaking");
   stopVideo();
 }
 
@@ -45,46 +38,10 @@ function setIdle() {
 function addMessage(text, type) {
   const div = document.createElement("div");
   div.className = `msg ${type}`;
-  div.innerHTML = text || "";
+  div.innerHTML = text.replace(/\n/g, "<br>");
   chat.appendChild(div);
   chat.scrollTop = chat.scrollHeight;
   return div;
-}
-
-/* ===== TYPING EFFECT ===== */
-
-function typeMessage(element, fullText) {
-  return new Promise((resolve) => {
-    const words = fullText.split(" ");
-    let index = 0;
-
-    element.innerHTML = `<span class="cursor">|</span>`;
-
-    function addWord() {
-      if (index < words.length) {
-
-        let delay = BASE_DELAY;
-
-        // Micro pausas naturales
-        if (/[.,!?]$/.test(words[index])) delay *= 2;
-        if (/[,;:]$/.test(words[index])) delay *= 1.5;
-
-        element.innerHTML =
-          words.slice(0, index + 1).join(" ") +
-          ` <span class="cursor">|</span>`;
-
-        chat.scrollTop = chat.scrollHeight;
-        index++;
-        setTimeout(addWord, delay);
-
-      } else {
-        element.innerHTML = fullText.replace(/\n/g, "<br>");
-        resolve();
-      }
-    }
-
-    addWord();
-  });
 }
 
 /* ===== FORM ===== */
@@ -98,38 +55,38 @@ form.addEventListener("submit", async (e) => {
   addMessage(text, "user");
   input.value = "";
 
-  startThinking();
+  // 🔥 ANTICIPACIÓN INTELIGENTE
+  startSpeaking();
+
+  const speakStartTime = Date.now();
 
   try {
-    const res = await fetch("/chat", {
+    const fetchPromise = fetch("/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message: text })
     });
+
+    // 🔹 No esperamos inmediatamente
+    const res = await fetchPromise;
 
     if (!res.ok) throw new Error("HTTP error");
 
     const data = await res.json();
     const reply = data.content || data.response || "Sin respuesta";
 
-    const typingBubble = addMessage("...", "bot");
+    // 🔹 Garantizar que el avatar no corte demasiado rápido
+    const elapsed = Date.now() - speakStartTime;
+    const remaining = Math.max(0, MIN_SPEAK_TIME - elapsed);
 
-    setTimeout(async () => {
-
-      startSpeaking();
-
-      await typeMessage(typingBubble, reply);
-
-      setIdle();
-
-    }, SPEECH_LEAD_TIME);
+    setTimeout(() => {
+      addMessage(reply, "bot");
+      stopSpeaking();
+    }, remaining + THINKING_DELAY);
 
   } catch (err) {
     console.error(err);
-    setIdle();
     addMessage("No pude conectar con el servidor", "bot");
+    stopSpeaking();
   }
 });
-
-/* ===== INIT ===== */
-setIdle();
