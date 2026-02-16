@@ -1,106 +1,98 @@
-const messages = document.getElementById("messages");
-const input = document.getElementById("user-input");
-const button = document.getElementById("send-button");
-const avatarVideo = document.getElementById("avatar-video");
+const chat = document.getElementById("chat");
+const form = document.getElementById("form");
+const input = document.getElementById("input");
+const avatar = document.getElementById("chatAvatar");
+const video = document.getElementById("avatarVideo");
 
-// CONFIGURA TU VIDEO AQUÍ
-avatarVideo.src = "/static/avatar.mp4";
+/* ===== CONFIG ===== */
+const WORDS_PER_SECOND = 2.7;
 
-let speakingInterval = null;
+/* ===== VIDEO CONTROL ===== */
 
-/* ========================
-   CHAT UI
-======================== */
-
-function addUserMessage(text) {
-    const div = document.createElement("div");
-    div.className = "user-message";
-    div.innerText = text;
-    messages.appendChild(div);
-    messages.scrollTop = messages.scrollHeight;
+function playVideo(){
+  video.currentTime = 0;
+  video.play();
 }
 
-function addBotMessage(text) {
-    const div = document.createElement("div");
-    div.className = "bot-message";
-    div.innerText = text;
-    messages.appendChild(div);
-    messages.scrollTop = messages.scrollHeight;
+function stopVideo(){
+  video.pause();
+  video.currentTime = 0;
 }
 
-/* ========================
-   DURACIÓN ESTIMADA
-======================== */
+/* ===== AVATAR STATES ===== */
 
-function estimateSpeechDuration(text) {
-    const words = text.trim().split(/\s+/).length;
-    return words / 2.5; // 2.5 palabras por segundo
+function startThinking(){
+  avatar.classList.add("floating","thinking");
+  avatar.classList.remove("speaking");
 }
 
-/* ========================
-   VIDEO ADAPTATIVO
-======================== */
-
-function speakWithVideo(text) {
-
-    const durationNeeded = estimateSpeechDuration(text);
-
-    avatarVideo.loop = false;
-    avatarVideo.playbackRate = 0.95 + Math.random() * 0.1;
-    avatarVideo.currentTime = 0;
-
-    avatarVideo.play();
-
-    let elapsed = 0;
-    const videoDuration = 5; // duración real de tu video
-
-    if (speakingInterval) clearInterval(speakingInterval);
-
-    speakingInterval = setInterval(() => {
-
-        elapsed += videoDuration;
-
-        if (elapsed >= durationNeeded) {
-            clearInterval(speakingInterval);
-            avatarVideo.pause();
-            avatarVideo.currentTime = 0;
-        } else {
-            avatarVideo.currentTime = 0;
-            avatarVideo.play();
-        }
-
-    }, videoDuration * 1000);
+function startSpeaking(){
+  avatar.classList.remove("thinking");
+  avatar.classList.add("speaking");
+  playVideo();
 }
 
-/* ========================
-   BACKEND CALL
-======================== */
+function stopAvatar(){
+  avatar.classList.remove("floating","thinking","speaking");
+  stopVideo();
+}
 
-async function sendMessage() {
+/* ===== CHAT ===== */
 
-    const text = input.value.trim();
-    if (!text) return;
+function addMessage(text,type){
+  const div=document.createElement("div");
+  div.className=`msg ${type}`;
+  div.innerHTML=(text || "…").replace(/\n/g,"<br>");
+  chat.appendChild(div);
+  chat.scrollTop=chat.scrollHeight;
+}
 
-    addUserMessage(text);
-    input.value = "";
+/* ===== DURACIÓN REALISTA ===== */
 
-    const response = await fetch("/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text })
+function calculateSpeechDuration(text){
+  const words = text.trim().split(/\s+/).length;
+  const seconds = words / WORDS_PER_SECOND;
+  return seconds * 1000;
+}
+
+/* ===== FORM ===== */
+
+form.addEventListener("submit",async(e)=>{
+  e.preventDefault();
+
+  const text=input.value.trim();
+  if(!text) return;
+
+  addMessage(text,"user");
+  input.value="";
+
+  startThinking();
+
+  try{
+    const res=await fetch("/chat",{
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body:JSON.stringify({ message:text })
     });
 
-    const data = await response.json();
-    const reply = data.reply;
+    if(!res.ok) throw new Error("HTTP error");
 
-    addBotMessage(reply);
-    speakWithVideo(reply);
-}
+    const data=await res.json();
+    const reply = data.content || data.response || "Sin respuesta";
 
-button.addEventListener("click", sendMessage);
+    addMessage(reply,"bot");
 
-input.addEventListener("keypress", function(e) {
-    if (e.key === "Enter") {
-        sendMessage();
-    }
+    startSpeaking();
+
+    const duration = calculateSpeechDuration(reply);
+
+    setTimeout(() => {
+      stopAvatar();
+    }, duration);
+
+  }catch(err){
+    console.error(err);
+    stopAvatar();
+    addMessage("No pude conectar con el servidor","bot");
+  }
 });
