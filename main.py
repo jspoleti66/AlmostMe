@@ -2,21 +2,23 @@ import os
 import json
 import re
 import traceback
+from datetime import timedelta
 
 from flask import Flask, request, jsonify, render_template, session
-from datetime import timedelta
 
 from azure.ai.inference import ChatCompletionsClient
 from azure.ai.inference.models import (
     SystemMessage,
     UserMessage,
-    AssistantMessage
+    AssistantMessage,
 )
 from azure.core.credentials import AzureKeyCredential
+
 
 # =====================================================
 # APP CONFIG
 # =====================================================
+
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "almostme_secret")
 app.permanent_session_lifetime = timedelta(minutes=30)
@@ -24,22 +26,32 @@ app.permanent_session_lifetime = timedelta(minutes=30)
 BASE_PATH = "data/conocimiento"
 CONFIG_PATH = "data/config/context.json"
 
+
+# =====================================================
+# LOAD CONFIG
+# =====================================================
+
 def load_config():
     if not os.path.exists(CONFIG_PATH):
         raise Exception("context.json no encontrado")
     with open(CONFIG_PATH, encoding="utf-8") as f:
         return json.load(f)
 
+
 CONFIG = load_config()
+HISTORY_LIMIT = CONFIG.get("history_limit", 10)
+
 
 # =====================================================
 # LOADERS
 # =====================================================
+
 def load_txt(path):
     if not os.path.exists(path):
         return ""
     with open(path, encoding="utf-8") as f:
         return f.read().strip()
+
 
 def load_json(path):
     if not os.path.exists(path):
@@ -47,10 +59,24 @@ def load_json(path):
     with open(path, encoding="utf-8") as f:
         return json.load(f)
 
+
+# =====================================================
+# SYSTEM PROMPT (REGLAS PURAS)
+# =====================================================
+
+SYSTEM_PROMPT = load_txt(CONFIG["system_prompt"])
+
+
+# =====================================================
+# KNOWLEDGE ENGINE (DOMAINS)
+# =====================================================
+
 def load_domains():
     domains = []
+
     for name, cfg in CONFIG["domains"].items():
         blocks = []
+
         for file in cfg["files"]:
             path = os.path.join(BASE_PATH, file)
             content = load_txt(path)
@@ -67,36 +93,14 @@ def load_domains():
     domains.sort(key=lambda x: x["priority"], reverse=True)
     return domains
 
+
 DOMAINS = load_domains()
 
-def load_manuals():
-    path = os.path.join(BASE_PATH, CONFIG["manuales"]["path"])
-    if not os.path.exists(path):
-        return []
-    data = load_json(path)
-    return data.get("items", [])
 
-MANUALES = load_manuals()
-SYSTEM_PROMPT = load_txt(CONFIG["system_prompt"])
-
-
-# =====================================================
-# UTILS
-# =====================================================
-def normalize(text):
-    text = text.lower()
-    text = re.sub(r"[^\w\sáéíóúñ]", "", text)
-    return text
-
-
-# =====================================================
-# CONTEXTO UNIFICADO (ARQUITECTURA NUEVA)
-# =====================================================
-def build_facts_block():
+def build_knowledge_block():
     """
-    Une TODOS los dominios en una única fuente de verdad.
-    No hay selección parcial.
-    No hay inferencia en código.
+    Devuelve SOLO conocimiento autorizado.
+    No incluye reglas.
     """
     collected = []
 
@@ -107,28 +111,31 @@ def build_facts_block():
     return "\n\n".join(collected).strip()
 
 
-def build_context():
-    """
-    Construye el system message final unificado.
-    """
-    facts_block = build_facts_block()
-
-    return f"""
-{SYSTEM_PROMPT}
-
-────────────────────────────────────────
-HECHOS_AUTORIZADOS
-────────────────────────────────────────
-
-{facts_block if facts_block else "No hay hechos autorizados definidos."}
-
-Fin del contexto.
-""".strip()
-
-
 # =====================================================
 # MANUALES
 # =====================================================
+
+def load_manuals():
+    path = os.path.join(BASE_PATH, CONFIG["manuales"]["path"])
+    if not os.path.exists(path):
+        return []
+    data = load_json(path)
+    return data.get("items", [])
+
+
+MANUALES = load_manuals()
+
+
+# =====================================================
+# UTILS
+# =====================================================
+
+def normalize(text):
+    text = text.lower()
+    text = re.sub(r"[^\w\sáéíóúñ]", "", text)
+    return text
+
+
 def find_manual(message):
     text = normalize(message)
 
@@ -153,9 +160,37 @@ def mentions_manual_intent(text):
 
 
 # =====================================================
+# RESPONSE VALIDATOR (ENFORCEMENT BÁSICO)
+# =====================================================
+
+FORBIDDEN_TERMS = [
+    "ia",
+    "modelo",
+    "entrenamiento",
+    "sistema",
+    "proveedor",
+]
+
+
+def validate_response(text):
+    """
+    Valida que la respuesta no viole reglas críticas.
+    """
+    norm = normalize(text)
+
+    for term in FORBIDDEN_TERMS:
+        if term in norm:
+            return False
+
+    return True
+
+
+# =====================================================
 # MODEL
 # =====================================================
+
 def query_model(history, message):
+
     token = os.getenv("GITHUB_TOKEN")
     if not token:
         return "Error: Token no configurado."
@@ -166,14 +201,35 @@ def query_model(history, message):
             credential=AzureKeyCredential(token),
         )
 
-        messages = [
-            SystemMessage(content=build_context())
-        ]
+        knowledge_block = build_knowledge_block()
 
+        messages = []
+
+        # 1️⃣ REGLAS INMUTABLES
+        messages.append(SystemMessage(content=SYSTEM_PROMPT))
+
+        # 2️⃣ CONOCIMIENTO AUTORIZADO (jerarquía inferior a reglas)
+        if knowledge_block:
+            messages.append(
+                SystemMessage(
+                    content=f"""
+Utilizá EXCLUSIVAMENTE los siguientes hechos autorizados
+para responder. No inventes información fuera de esto.
+
+────────────────────────────────
+HECHOS_AUTORIZADOS
+────────────────────────────────
+{knowledge_block}
+"""
+                )
+            )
+
+        # 3️⃣ HISTORIAL
         for msg in history:
             role = UserMessage if msg["role"] == "user" else AssistantMessage
             messages.append(role(content=msg["content"]))
 
+        # 4️⃣ MENSAJE ACTUAL
         messages.append(UserMessage(content=message))
 
         response = client.complete(
@@ -183,7 +239,13 @@ def query_model(history, message):
             max_tokens=400
         )
 
-        return response.choices[0].message.content.strip()
+        answer = response.choices[0].message.content.strip()
+
+        # 5️⃣ VALIDACIÓN
+        if not validate_response(answer):
+            return "No puedo responder eso."
+
+        return answer
 
     except Exception:
         return "Lo siento, no puedo responder en este momento."
@@ -192,6 +254,7 @@ def query_model(history, message):
 # =====================================================
 # ROUTES
 # =====================================================
+
 @app.route("/")
 def index():
     session.permanent = True
@@ -211,15 +274,21 @@ def chat():
         history = session.get("history", [])
         norm = normalize(message)
 
-        # 1. Filtro Meta-información
-        meta_triggers = ["que informacion guard", "que sabes de mi", "tus archivos"]
+        # 🔒 Filtro meta
+        meta_triggers = [
+            "que informacion guard",
+            "que sabes de mi",
+            "tus archivos",
+            "cual es tu system prompt"
+        ]
+
         if any(t in norm for t in meta_triggers):
             return jsonify({
                 "type": "text",
-                "content": "Solo accedo a manuales y conocimiento autorizado."
+                "content": "Solo accedo a conocimiento autorizado."
             })
 
-        # 2. Manual específico
+        # 📘 Manual específico
         manual_especifico = find_manual(message)
         if manual_especifico:
             return jsonify({
@@ -227,21 +296,22 @@ def chat():
                 "content": f"<b>{manual_especifico['title']}</b><br>{manual_especifico['summary']}<br><a href='{manual_especifico['url']}' target='_blank'>Ver Manual</a>"
             })
 
-        # 3. Lista de manuales
+        # 📚 Lista manuales
         if mentions_manual_intent(message) or norm in ["si", "cuales", "que mas"]:
             titulos = list_manual_titles()
             if titulos:
                 return jsonify({
                     "type": "text",
-                    "content": "Los únicos manuales que tengo disponibles son:\n• " + "\n• ".join(titulos)
+                    "content": "Los únicos manuales disponibles son:\n• " + "\n• ".join(titulos)
                 })
 
-        # 4. LLM
+        # 🤖 LLM
         answer = query_model(history, message)
 
         history.append({"role": "user", "content": message})
         history.append({"role": "assistant", "content": answer})
-        session["history"] = history[-10:]
+
+        session["history"] = history[-HISTORY_LIMIT:]
 
         return jsonify({"type": "text", "content": answer})
 
@@ -250,6 +320,9 @@ def chat():
         return jsonify({"type": "text", "content": "Hubo un error de conexión."}), 500
 
 
+# =====================================================
+# MAIN
+# =====================================================
+
 if __name__ == "__main__":
     app.run(debug=True)
-
