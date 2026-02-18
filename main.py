@@ -61,7 +61,7 @@ def load_json(path):
 
 
 # =====================================================
-# SYSTEM PROMPT (REGLAS PURAS)
+# SYSTEM PROMPT (REGLAS)
 # =====================================================
 
 SYSTEM_PROMPT = load_txt(CONFIG["system_prompt"])
@@ -99,8 +99,7 @@ DOMAINS = load_domains()
 
 def build_knowledge_block():
     """
-    Devuelve SOLO conocimiento autorizado.
-    No incluye reglas.
+    Devuelve conocimiento autorizado organizado por dominio.
     """
     collected = []
 
@@ -160,7 +159,7 @@ def mentions_manual_intent(text):
 
 
 # =====================================================
-# RESPONSE VALIDATOR (ENFORCEMENT BÁSICO)
+# RESPONSE VALIDATOR
 # =====================================================
 
 FORBIDDEN_TERMS = [
@@ -173,9 +172,6 @@ FORBIDDEN_TERMS = [
 
 
 def validate_response(text):
-    """
-    Valida que la respuesta no viole reglas críticas.
-    """
     norm = normalize(text)
 
     for term in FORBIDDEN_TERMS:
@@ -205,16 +201,24 @@ def query_model(history, message):
 
         messages = []
 
-        # 1️⃣ REGLAS INMUTABLES
+        # 1️⃣ REGLAS
         messages.append(SystemMessage(content=SYSTEM_PROMPT))
 
-        # 2️⃣ CONOCIMIENTO AUTORIZADO (jerarquía inferior a reglas)
+        # 2️⃣ CONOCIMIENTO AUTORIZADO (NO RESTRICTIVO)
         if knowledge_block:
             messages.append(
                 SystemMessage(
                     content=f"""
-Utilizá EXCLUSIVAMENTE los siguientes hechos autorizados
-para responder. No inventes información fuera de esto.
+Los siguientes son hechos autorizados sobre tu identidad y experiencia.
+
+Si la pregunta se refiere a información personal,
+utilizá únicamente estos datos.
+
+Si la pregunta es general o técnica,
+podés responder usando conocimiento profesional general,
+respetando siempre las reglas del system prompt.
+
+Nunca inventes experiencias personales no documentadas.
 
 ────────────────────────────────
 HECHOS_AUTORIZADOS
@@ -235,13 +239,13 @@ HECHOS_AUTORIZADOS
         response = client.complete(
             model="Meta-Llama-3.1-8B-Instruct",
             messages=messages,
-            temperature=0.1,
+            temperature=0.2,
             max_tokens=400
         )
 
         answer = response.choices[0].message.content.strip()
 
-        # 5️⃣ VALIDACIÓN
+        # 5️⃣ VALIDACIÓN FINAL
         if not validate_response(answer):
             return "No puedo responder eso."
 
@@ -274,7 +278,7 @@ def chat():
         history = session.get("history", [])
         norm = normalize(message)
 
-        # 🔒 Filtro meta
+        # 🔒 Meta protección
         meta_triggers = [
             "que informacion guard",
             "que sabes de mi",
