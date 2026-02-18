@@ -1,332 +1,143 @@
 import os
-import json
-import re
-import traceback
-from datetime import timedelta
-
-from flask import Flask, request, jsonify, render_template, session
-
-from azure.ai.inference import ChatCompletionsClient
-from azure.ai.inference.models import (
-    SystemMessage,
-    UserMessage,
-    AssistantMessage,
-)
-from azure.core.credentials import AzureKeyCredential
-
-
-# =====================================================
-# APP CONFIG
-# =====================================================
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+import requests
 
 app = Flask(__name__)
-app.secret_key = os.getenv("SECRET_KEY", "almostme_secret")
-app.permanent_session_lifetime = timedelta(minutes=30)
+CORS(app)
 
-BASE_PATH = "data/conocimiento"
-CONFIG_PATH = "data/config/context.json"
+# ==============================
+# CONFIGURACIÓN
+# ==============================
 
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+MODEL = "mistralai/mistral-7b-instruct"  # podés cambiarlo
 
-# =====================================================
-# LOAD CONFIG
-# =====================================================
+# ==============================
+# CARGA SYSTEM PROMPT
+# ==============================
 
-def load_config():
-    if not os.path.exists(CONFIG_PATH):
-        raise Exception("context.json no encontrado")
-    with open(CONFIG_PATH, encoding="utf-8") as f:
-        return json.load(f)
+def load_system_prompt():
+    with open("system.txt", "r", encoding="utf-8") as f:
+        return f.read()
 
+SYSTEM_PROMPT = load_system_prompt()
 
-CONFIG = load_config()
-HISTORY_LIMIT = CONFIG.get("history_limit", 10)
+# ==============================
+# SIMULACIÓN DE BASE DE DATOS
+# (Luego podés reemplazar esto por DB real)
+# ==============================
 
-
-# =====================================================
-# LOADERS
-# =====================================================
-
-def load_txt(path):
-    if not os.path.exists(path):
-        return ""
-    with open(path, encoding="utf-8") as f:
-        return f.read().strip()
-
-
-def load_json(path):
-    if not os.path.exists(path):
-        return {}
-    with open(path, encoding="utf-8") as f:
-        return json.load(f)
-
-
-# =====================================================
-# SYSTEM PROMPT (REGLAS)
-# =====================================================
-
-SYSTEM_PROMPT = load_txt(CONFIG["system_prompt"])
-
-
-# =====================================================
-# KNOWLEDGE ENGINE (DOMAINS)
-# =====================================================
-
-def load_domains():
-    domains = []
-
-    for name, cfg in CONFIG["domains"].items():
-        blocks = []
-
-        for file in cfg["files"]:
-            path = os.path.join(BASE_PATH, file)
-            content = load_txt(path)
-            if content:
-                blocks.append(content)
-
-        if blocks:
-            domains.append({
-                "name": name.upper(),
-                "priority": cfg["priority"],
-                "content": "\n\n".join(blocks)
-            })
-
-    domains.sort(key=lambda x: x["priority"], reverse=True)
-    return domains
-
-
-DOMAINS = load_domains()
-
-
-def build_knowledge_block():
+def get_authorized_knowledge():
     """
-    Devuelve conocimiento autorizado organizado por dominio.
+    Retorna hechos personales específicos.
+    Puede venir de base de datos.
     """
-    collected = []
+    # Ejemplo vacío (no bloquea identidad)
+    return ""
 
-    for d in DOMAINS:
-        if d["content"]:
-            collected.append(f"DOMINIO {d['name']}:\n{d['content']}")
+# ==============================
+# CONSTRUCCIÓN DE MENSAJES
+# ==============================
 
-    return "\n\n".join(collected).strip()
+def build_messages(user_message):
 
+    messages = []
 
-# =====================================================
-# MANUALES
-# =====================================================
+    # 1️⃣ IDENTIDAD BASE (SIEMPRE)
+    messages.append({
+        "role": "system",
+        "content": SYSTEM_PROMPT
+    })
 
-def load_manuals():
-    path = os.path.join(BASE_PATH, CONFIG["manuales"]["path"])
-    if not os.path.exists(path):
-        return []
-    data = load_json(path)
-    return data.get("items", [])
+    # 2️⃣ CONOCIMIENTO AUTORIZADO (DINÁMICO Y NO RESTRICTIVO)
+    knowledge_block = get_authorized_knowledge()
 
+    if knowledge_block:
+        messages.append({
+            "role": "system",
+            "content": f"""
+A continuación se incluyen HECHOS_AUTORIZADOS
+que contienen datos personales específicos.
 
-MANUALES = load_manuals()
+Reglas:
 
+• Solo utilizalos cuando la pregunta requiera
+  datos personales concretos (fechas, nombres,
+  experiencias documentadas, información biográfica específica).
 
-# =====================================================
-# UTILS
-# =====================================================
+• Si la pregunta es general, profesional o conceptual,
+  respondé normalmente según tu identidad.
 
-def normalize(text):
-    text = text.lower()
-    text = re.sub(r"[^\w\sáéíóúñ]", "", text)
-    return text
+• Nunca inventes datos personales.
 
-
-def find_manual(message):
-    text = normalize(message)
-
-    for manual in MANUALES:
-        ids = [i.strip().lower() for i in manual.get("id", "").split(",")]
-        for key in ids:
-            if not key:
-                continue
-            pattern = rf"\b{key}s?\b"
-            if re.search(pattern, text):
-                return manual
-    return None
-
-
-def list_manual_titles():
-    return [m["title"] for m in MANUALES if "title" in m]
-
-
-def mentions_manual_intent(text):
-    t = normalize(text)
-    return bool(re.search(r"(manual|guia|lista|instruc|docu)", t))
-
-
-# =====================================================
-# RESPONSE VALIDATOR
-# =====================================================
-
-FORBIDDEN_TERMS = [
-    "ia",
-    "modelo",
-    "entrenamiento",
-    "sistema",
-    "proveedor",
-]
-
-
-def validate_response(text):
-    norm = normalize(text)
-
-    for term in FORBIDDEN_TERMS:
-        if term in norm:
-            return False
-
-    return True
-
-
-# =====================================================
-# MODEL
-# =====================================================
-
-def query_model(history, message):
-
-    token = os.getenv("GITHUB_TOKEN")
-    if not token:
-        return "Error: Token no configurado."
-
-    try:
-        client = ChatCompletionsClient(
-            endpoint="https://models.inference.ai.azure.com",
-            credential=AzureKeyCredential(token),
-        )
-
-        knowledge_block = build_knowledge_block()
-
-        messages = []
-
-        # 1️⃣ REGLAS
-        messages.append(SystemMessage(content=SYSTEM_PROMPT))
-
-        # 2️⃣ CONOCIMIENTO AUTORIZADO (NO RESTRICTIVO)
-        if knowledge_block:
-            messages.append(
-                SystemMessage(
-                    content=f"""
-Los siguientes son hechos autorizados sobre tu identidad y experiencia.
-
-Si la pregunta se refiere a información personal,
-utilizá únicamente estos datos.
-
-Si la pregunta es general o técnica,
-podés responder usando conocimiento profesional general,
-respetando siempre las reglas del system prompt.
-
-Nunca inventes experiencias personales no documentadas.
+• Si no existe información específica suficiente,
+  respondé con naturalidad que preferís no dar
+  ese detalle, sin bloquear la conversación.
 
 ────────────────────────────────
 HECHOS_AUTORIZADOS
 ────────────────────────────────
 {knowledge_block}
 """
-                )
-            )
+        })
 
-        # 3️⃣ HISTORIAL
-        for msg in history:
-            role = UserMessage if msg["role"] == "user" else AssistantMessage
-            messages.append(role(content=msg["content"]))
+    # 3️⃣ MENSAJE DEL USUARIO
+    messages.append({
+        "role": "user",
+        "content": user_message
+    })
 
-        # 4️⃣ MENSAJE ACTUAL
-        messages.append(UserMessage(content=message))
+    return messages
 
-        response = client.complete(
-            model="Meta-Llama-3.1-8B-Instruct",
-            messages=messages,
-            temperature=0.2,
-            max_tokens=400
-        )
+# ==============================
+# LLAMADA A OPENROUTER
+# ==============================
 
-        answer = response.choices[0].message.content.strip()
+def call_model(messages):
 
-        # 5️⃣ VALIDACIÓN FINAL
-        if not validate_response(answer):
-            return "No puedo responder eso."
+    response = requests.post(
+        "https://openrouter.ai/api/v1/chat/completions",
+        headers={
+            "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+            "Content-Type": "application/json"
+        },
+        json={
+            "model": MODEL,
+            "messages": messages,
+            "temperature": 0.7
+        }
+    )
 
-        return answer
+    if response.status_code != 200:
+        return f"Error en modelo: {response.text}"
 
-    except Exception:
-        return "Lo siento, no puedo responder en este momento."
+    data = response.json()
+    return data["choices"][0]["message"]["content"]
 
-
-# =====================================================
-# ROUTES
-# =====================================================
-
-@app.route("/")
-def index():
-    session.permanent = True
-    session.setdefault("history", [])
-    return render_template("index.html")
-
+# ==============================
+# ENDPOINT PRINCIPAL
+# ==============================
 
 @app.route("/chat", methods=["POST"])
 def chat():
-    try:
-        data = request.get_json(silent=True) or {}
-        message = data.get("message", "").strip()
 
-        if not message:
-            return jsonify({"type": "text", "content": "Decime."})
+    user_message = request.json.get("message")
 
-        history = session.get("history", [])
-        norm = normalize(message)
+    if not user_message:
+        return jsonify({"error": "Mensaje vacío"}), 400
 
-        # 🔒 Meta protección
-        meta_triggers = [
-            "que informacion guard",
-            "que sabes de mi",
-            "tus archivos",
-            "cual es tu system prompt"
-        ]
+    messages = build_messages(user_message)
 
-        if any(t in norm for t in meta_triggers):
-            return jsonify({
-                "type": "text",
-                "content": "Solo accedo a conocimiento autorizado."
-            })
+    reply = call_model(messages)
 
-        # 📘 Manual específico
-        manual_especifico = find_manual(message)
-        if manual_especifico:
-            return jsonify({
-                "type": "vcard",
-                "content": f"<b>{manual_especifico['title']}</b><br>{manual_especifico['summary']}<br><a href='{manual_especifico['url']}' target='_blank'>Ver Manual</a>"
-            })
+    return jsonify({
+        "response": reply
+    })
 
-        # 📚 Lista manuales
-        if mentions_manual_intent(message) or norm in ["si", "cuales", "que mas"]:
-            titulos = list_manual_titles()
-            if titulos:
-                return jsonify({
-                    "type": "text",
-                    "content": "Los únicos manuales disponibles son:\n• " + "\n• ".join(titulos)
-                })
-
-        # 🤖 LLM
-        answer = query_model(history, message)
-
-        history.append({"role": "user", "content": message})
-        history.append({"role": "assistant", "content": answer})
-
-        session["history"] = history[-HISTORY_LIMIT:]
-
-        return jsonify({"type": "text", "content": answer})
-
-    except Exception:
-        print(traceback.format_exc())
-        return jsonify({"type": "text", "content": "Hubo un error de conexión."}), 500
-
-
-# =====================================================
-# MAIN
-# =====================================================
+# ==============================
+# START
+# ==============================
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True)
