@@ -4,95 +4,104 @@ const input = document.getElementById("input");
 const avatar = document.getElementById("chatAvatar");
 const video = document.getElementById("avatarVideo");
 
-/* ===== CONFIG ===== */
-const WORDS_PER_SECOND = 2.7;
-
 /* ===== VIDEO CONTROL ===== */
-
-function playVideo(){
-  video.currentTime = 0;
-  video.play();
+function playVideo() {
+  if (video.paused) {
+    video.currentTime = 0;
+    video.play().catch(e => console.warn("Video play blocked:", e));
+  }
 }
 
-function stopVideo(){
+function stopVideo() {
   video.pause();
   video.currentTime = 0;
 }
 
 /* ===== AVATAR STATES ===== */
-
-function startThinking(){
-  avatar.classList.add("floating","thinking");
+function startThinking() {
+  avatar.classList.add("floating", "thinking");
   avatar.classList.remove("speaking");
 }
 
-function startSpeaking(){
+function startSpeaking() {
   avatar.classList.remove("thinking");
   avatar.classList.add("speaking");
   playVideo();
 }
 
-function stopAvatar(){
-  avatar.classList.remove("floating","thinking","speaking");
+function stopAvatar() {
+  avatar.classList.remove("floating", "thinking", "speaking");
   stopVideo();
 }
 
-/* ===== CHAT ===== */
-
-function addMessage(text,type){
-  const div=document.createElement("div");
-  div.className=`msg ${type}`;
-  div.innerHTML=(text || "…").replace(/\n/g,"<br>");
+/* ===== CHAT HELPERS ===== */
+function addMessageContainer(type) {
+  const div = document.createElement("div");
+  div.className = `msg ${type}`;
   chat.appendChild(div);
-  chat.scrollTop=chat.scrollHeight;
+  return div;
 }
 
-/* ===== DURACIÓN REALISTA ===== */
-
-function calculateSpeechDuration(text){
-  const words = text.trim().split(/\s+/).length;
-  const seconds = words / WORDS_PER_SECOND;
-  return seconds * 1000;
-}
-
-/* ===== FORM ===== */
-
-form.addEventListener("submit",async(e)=>{
+/* ===== FORM SUBMIT (STREAMING) ===== */
+form.addEventListener("submit", async (e) => {
   e.preventDefault();
 
-  const text=input.value.trim();
-  if(!text) return;
+  const text = input.value.trim();
+  if (!text) return;
 
-  addMessage(text,"user");
-  input.value="";
+  // Mensaje del usuario
+  const userDiv = addMessageContainer("user");
+  userDiv.innerText = text;
+  input.value = "";
+  chat.scrollTop = chat.scrollHeight;
 
   startThinking();
 
-  try{
-    const res=await fetch("/chat",{
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body:JSON.stringify({ message:text })
+  try {
+    const res = await fetch("/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: text })
     });
 
-    if(!res.ok) throw new Error("HTTP error");
+    if (!res.ok) throw new Error("HTTP error");
 
-    const data=await res.json();
-    const reply = data.content || data.response || "Sin respuesta";
+    const contentType = res.headers.get('content-type');
 
-    addMessage(reply,"bot");
+    // CASO A: Respuesta JSON (Manuales/VCards o Errores)
+    if (contentType && contentType.includes('application/json')) {
+      const data = await res.json();
+      stopAvatar(); // Opcional: podrías ponerlo a hablar brevemente
+      const botDiv = addMessageContainer("bot");
+      botDiv.innerHTML = data.content;
+    } 
+    
+    // CASO B: Streaming de texto (Conversación normal)
+    else {
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      const botDiv = addMessageContainer("bot");
+      
+      startSpeaking();
 
-    startSpeaking();
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
 
-    const duration = calculateSpeechDuration(reply);
+        const chunk = decoder.decode(value, { stream: true });
+        // Reemplazamos saltos de línea por <br> para el formato
+        botDiv.innerHTML += chunk.replace(/\n/g, "<br>");
+        chat.scrollTop = chat.scrollHeight;
+      }
+      
+      // Una vez que el stream termina, esperamos un microsegundo y paramos el avatar
+      setTimeout(stopAvatar, 500);
+    }
 
-    setTimeout(() => {
-      stopAvatar();
-    }, duration);
-
-  }catch(err){
+  } catch (err) {
     console.error(err);
     stopAvatar();
-    addMessage("No pude conectar con el servidor","bot");
+    const errorDiv = addMessageContainer("bot");
+    errorDiv.innerText = "No pude conectar con el servidor.";
   }
 });
